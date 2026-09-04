@@ -40,13 +40,19 @@ class ComprasClient:
     def normalize_page(payload: Any) -> dict[str, Any]:
         return _normalize_page(payload, "resultado", "data")
 
-    def client(self) -> ReadOnlyHttpClient:
+    def client(self, *, max_document_bytes: int | None = None) -> ReadOnlyHttpClient:
+        if max_document_bytes is not None and max_document_bytes <= 0:
+            raise ValueError("max_document_bytes must be positive")
         settings = Settings()  # pyright: ignore[reportCallIssue]
         return ReadOnlyHttpClient(
             self.base_url,
             max_retries=settings.http_max_retries,
             timeout=settings.http_timeout,
-            max_document_bytes=settings.max_document_bytes,
+            max_document_bytes=(
+                settings.max_document_bytes
+                if max_document_bytes is None
+                else max_document_bytes
+            ),
         )
 
 
@@ -57,11 +63,17 @@ class PncpClient:
     def normalize_page(payload: Any) -> dict[str, Any]:
         return _normalize_page(payload, "data")
 
-    def client(self) -> ReadOnlyHttpClient:
+    def client(self, *, max_document_bytes: int | None = None) -> ReadOnlyHttpClient:
+        if max_document_bytes is not None and max_document_bytes <= 0:
+            raise ValueError("max_document_bytes must be positive")
         settings = Settings()  # pyright: ignore[reportCallIssue]
         return ReadOnlyHttpClient(
             self.base_url,
             max_retries=settings.http_max_retries,
             timeout=settings.http_timeout,
-            max_document_bytes=settings.max_document_bytes,
+            max_document_bytes=(
+                settings.max_document_bytes
+                if max_document_bytes is None
+                else max_document_bytes
+            ),
         )
