@@ -30,6 +30,7 @@ packages = ["src/features", "src/shared"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
   "live: consulta opt-in a produção; requer RUN_LIVE_TESTS=1",
 ]
