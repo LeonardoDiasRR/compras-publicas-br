@@ -13358,7 +13358,7 @@ endpoints:
   path: /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas/{cnpjOrgao}/{codUnidade}/{tipoParteEnvolvida}
   classification: PUBLIC_USEFUL
   implemented: true
-  tool: pncp_obter_orgaos_compras_atas_partesenvolvidas_por_cnpj_anocompra_sequencialcompra_sequencialata_cnpjorgao_codunidade_tipoparteenvolvida
+  tool: pncp_obter_parte_envolvida_ata
   description: Consulta dados públicos de compras públicas, itens, resultados e arquivos;
     ação consultar parte envolvida ata no caminho /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas/{cnpjOrgao}/{codUnidade}/{tipoParteEnvolvida}.
   security: []
