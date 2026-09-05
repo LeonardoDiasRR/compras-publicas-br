@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from src.features.catalogo.catalogo import (
     classify_operations,
     compare_catalogs,

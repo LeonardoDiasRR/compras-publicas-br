@@ -1,0 +1,31 @@
+name: CI
+on: [pull_request, push]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          version: "0.8.17"
+      - run: uv sync --all-groups --frozen
+      - run: uv run ruff check .
+      - run: uv run pyright
+      - run: uv run pytest -m "not live" -q
+      - run: uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
+      - name: Verify read-only HTTP surface
+        shell: bash
+        run: |
+          if rg -n '\.(post|put|patch|delete)\(' src/shared/http_readonly.py src/features/provedores; then
+            echo "Forbidden HTTP mutation method found."
+            exit 1
+          else
+            status=$?
+            if [ "$status" -eq 1 ]; then
+              exit 0
+            fi
+            echo "Read-only scan failed with rg status $status."
+            exit "$status"
+          fi
+      - run: uv build

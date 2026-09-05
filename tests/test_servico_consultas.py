@@ -1,4 +1,5 @@
 import pytest
+
 from src.features.consultas.servico import normalize_cnpj, render_path
 
 

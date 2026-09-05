@@ -2,6 +2,7 @@ import json
 
 import pytest
 from fastmcp import Client
+
 from src.features.mcp.servidor import build_server
 
 
