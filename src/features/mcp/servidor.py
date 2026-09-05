@@ -13,6 +13,8 @@ from fastmcp.tools.function_tool import FunctionTool
 
 from src.features.catalogo.models import Operation
 from src.features.consultas.servico import QueryService
+from src.shared.http_readonly import UpstreamError
+from src.shared.runtime import Settings, configure_logging
 
 DEFAULT_MANIFEST = Path("coverage/endpoints.yaml")
 _SOURCES = ("compras", "pncp")
@@ -44,6 +46,10 @@ _TOKEN_NAMES = {
     "nextToken",
     "token",
 }
+_SENSITIVE_ERROR_VALUE = re.compile(
+    r"(?i)(\b(?:authorization|api[-_ ]?key|password|secret|token|cookie)\b\s*[:=]\s*)"
+    r"(?:bearer\s+)?[^\s,;}\]]+"
+)
 
 
 def _load_manifest(path: Path | None) -> dict[str, Any]:
@@ -163,7 +169,11 @@ def _add_atomic_tool(server: FastMCP, service: QueryService, operation: Operatio
     _validate_tool_name(operation.tool)
 
     async def consultar(**arguments: Any) -> dict[str, Any]:
-        return (await service.execute(operation, arguments)).model_dump(mode="json")
+        try:
+            response = await service.execute(operation, arguments)
+        except UpstreamError as error:
+            return _upstream_error_envelope(error)
+        return response.model_dump(mode="json")
 
     server.add_tool(
         FunctionTool(
@@ -187,6 +197,41 @@ def _add_function_tool(server: FastMCP, name: str, function: Callable[..., Any])
 
 def _json_value(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False, default=str))
+
+
+def _upstream_error_envelope(error: UpstreamError) -> dict[str, Any]:
+    return {
+        "error": {
+            "provider": error.provider,
+            "type": error.kind,
+            "status": error.status,
+            "message": error.message,
+            "upstream_message": error.upstream_message,
+            "retryable": error.retryable,
+        }
+    }
+
+
+def _probe_error(provider: str, error: Exception) -> dict[str, Any]:
+    kind = getattr(error, "kind", type(error).__name__)
+    error_provider = getattr(error, "provider", None)
+    endpoint = getattr(error, "endpoint", None)
+    status = getattr(error, "status", None)
+    message = _SENSITIVE_ERROR_VALUE.sub(r"\1[REDACTED]", str(error))
+    if len(message) > 512:
+        message = f"{message[:509]}..."
+    provider_value = (
+        error_provider if isinstance(error_provider, str) and error_provider else provider
+    )
+    endpoint_value = endpoint if isinstance(endpoint, str) else None
+    return {
+        "provider": provider_value,
+        "endpoint": endpoint_value,
+        "kind": str(kind),
+        "type": str(kind),
+        "status": status if isinstance(status, (int, type(None))) else str(status),
+        "message": message,
+    }
 
 
 def _snapshot_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -263,8 +308,23 @@ def _required_parameters_available(endpoint: dict[str, Any], names: set[str]) ->
     return all(
         not isinstance(parameter, dict)
         or not cast(dict[str, Any], parameter).get("required", False)
-        or cast(dict[str, Any], parameter).get("name") in names
+        or (
+            cast(dict[str, Any], parameter).get("in") in {"path", "query"}
+            and cast(dict[str, Any], parameter).get("name") in names
+        )
         for parameter in parameters
+    )
+
+
+def _required_arguments_available(operation: Operation, arguments: dict[str, Any]) -> bool:
+    return all(
+        not parameter.get("required", False)
+        or (
+            parameter.get("in") in {"path", "query"}
+            and parameter.get("name") in arguments
+            and arguments[parameter["name"]] is not None
+        )
+        for parameter in operation.parameters
     )
 
 
@@ -291,7 +351,7 @@ def _search_arguments(
     codigo_material: int | None,
     codigo_servico: int | None,
 ) -> dict[str, Any]:
-    return {
+    arguments = {
         "texto": texto,
         "termo": texto,
         "objeto": texto,
@@ -314,6 +374,18 @@ def _search_arguments(
         "codigo_servico": codigo_servico,
         "codigoServico": codigo_servico,
     }
+    return {key: value for key, value in arguments.items() if value is not None}
+
+
+async def _execute_many_or_error(
+    service: QueryService,
+    operations: list[Operation],
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        return await service.execute_many(operations, arguments)
+    except UpstreamError as error:
+        return _upstream_error_envelope(error)
 
 
 def _records(value: Any) -> list[dict[str, Any]]:
@@ -379,7 +451,8 @@ def _register_composites(
             cnpj: str, ano: int, sequencial_contratacao: int
         ) -> dict[str, Any]:
             """Consulta os recursos públicos relacionados a uma contratação PNCP."""
-            return await service.execute_many(
+            return await _execute_many_or_error(
+                service,
                 contract_operations,
                 {
                     "cnpj": cnpj,
@@ -409,7 +482,8 @@ def _register_composites(
             cnpj: str, ano: int, sequencial_contratacao: int, sequencial_ata: int
         ) -> dict[str, Any]:
             """Consulta os recursos públicos relacionados a uma ata PNCP."""
-            return await service.execute_many(
+            return await _execute_many_or_error(
+                service,
                 ata_operations,
                 {
                     "cnpj": cnpj,
@@ -439,7 +513,8 @@ def _register_composites(
             cnpj: str, ano: int, sequencial_contrato: int
         ) -> dict[str, Any]:
             """Consulta os recursos públicos relacionados a um contrato PNCP."""
-            return await service.execute_many(
+            return await _execute_many_or_error(
+                service,
                 contrato_operations,
                 {
                     "cnpj": cnpj,
@@ -499,25 +574,24 @@ def _register_composites(
             """Pesquisa compras públicas nas fontes catalogadas sem deduplicar resultados."""
             if fonte not in {"compras", "pncp", "todas"}:
                 raise ValueError("fonte must be compras, pncp or todas")
+            arguments = _search_arguments(
+                texto,
+                orgao,
+                uasg,
+                cnpj,
+                modalidade,
+                data_inicio,
+                data_fim,
+                codigo_material,
+                codigo_servico,
+            )
             selected = [
                 operation
                 for operation in search_operations
-                if fonte == "todas" or operation.provider == fonte
+                if (fonte == "todas" or operation.provider == fonte)
+                and _required_arguments_available(operation, arguments)
             ]
-            results = await service.execute_many(
-                selected,
-                _search_arguments(
-                    texto,
-                    orgao,
-                    uasg,
-                    cnpj,
-                    modalidade,
-                    data_inicio,
-                    data_fim,
-                    codigo_material,
-                    codigo_servico,
-                ),
-            )
+            results = await _execute_many_or_error(service, selected, arguments)
             return _with_overlap_marker(results)
 
         add("buscar_compras_publicas", buscar_compras_publicas)
@@ -549,13 +623,14 @@ def build_server(manifest_path: Path | None) -> FastMCP:
         )
     _add_function_tool(server, "listar_capacidades_mcp", listar_capacidades_mcp)
 
-    async def verificar_saude_fontes() -> dict[str, str]:
+    async def verificar_saude_fontes() -> dict[str, Any]:
         """Executa probes públicos leves catalogados e informa a saúde de cada fonte."""
         probes = {
             "compras": "/modulo-indicadores/1_consultarIndicadoresConsolidados",
             "pncp": "/v1/modalidades",
         }
         statuses: dict[str, str] = {}
+        errors: dict[str, dict[str, Any]] = {}
         for source, path in probes.items():
             candidates = _operations(
                 endpoints,
@@ -564,13 +639,22 @@ def build_server(manifest_path: Path | None) -> FastMCP:
             )
             if not candidates:
                 statuses[source] = "unavailable"
+                errors[source] = {
+                    "provider": source,
+                    "type": "NO_HEALTH_PROBE",
+                    "status": None,
+                    "message": "No lightweight public health probe is cataloged for this provider.",
+                }
                 continue
             try:
                 await service.execute(candidates[0], {})
-            except Exception:
+            except Exception as error:
                 statuses[source] = "unavailable"
+                errors[source] = _probe_error(source, error)
             else:
                 statuses[source] = "operational"
+        if errors:
+            return {**statuses, "errors": errors}
         return statuses
     _add_function_tool(server, "verificar_saude_fontes", verificar_saude_fontes)
 
@@ -638,11 +722,14 @@ def build_server(manifest_path: Path | None) -> FastMCP:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Servidor MCP somente leitura de compras públicas")
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--transport", choices=["stdio", "http"], default="stdio")
+    parser.add_argument("--transport", choices=["stdio", "http"], default=None)
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
+    settings = Settings()  # pyright: ignore[reportCallIssue]
+    configure_logging(settings)
     server = build_server(args.manifest)
-    if args.transport == "http":
+    transport = args.transport or settings.mcp_transport
+    if transport == "http":
         server.run(transport="http", port=args.port)
     else:
         server.run(transport="stdio")

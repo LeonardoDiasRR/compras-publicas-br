@@ -25,6 +25,53 @@ TOOL_NAME_OVERRIDES = {
     "pncp.GET./v1/modalidades": "pncp_listar_modalidades",
 }
 TOOL_NAME_RE = re.compile(r"^(compras|pncp)_[a-z0-9_]+$")
+_NON_ATOMIC_TOOLS: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "listar_capacidades_mcp",
+        "Lista as fontes, domínios, cobertura, quantidade de ferramentas atômicas "
+        "e versão do catálogo MCP.",
+        "nenhum.",
+        "consulta metadados carregados do manifesto e não faz alterações nas fontes "
+        "ou no catálogo.",
+    ),
+    (
+        "verificar_saude_fontes",
+        "Executa probes públicos leves e informa se as fontes Compras.gov.br e PNCP "
+        "estão operacionais ou indisponíveis.",
+        "nenhum.",
+        "faz apenas requisições GET catalogadas para "
+        "`/modulo-indicadores/1_consultarIndicadoresConsolidados` e `/v1/modalidades`.",
+    ),
+    (
+        "pncp_obter_contratacao_completa",
+        "Consulta, em conjunto, os recursos públicos relacionados a uma contratação no PNCP.",
+        "`cnpj` (string), `ano` (inteiro) e `sequencial_contratacao` (inteiro).",
+        "agrega consultas GET dos recursos da contratação e não cria, altera ou exclui dados.",
+    ),
+    (
+        "pncp_obter_ata_completa",
+        "Consulta, em conjunto, os recursos públicos relacionados a uma ata de registro "
+        "de preços no PNCP.",
+        "`cnpj` (string), `ano` (inteiro), `sequencial_contratacao` (inteiro) e "
+        "`sequencial_ata` (inteiro).",
+        "agrega consultas GET dos recursos da ata e não cria, altera ou exclui dados.",
+    ),
+    (
+        "pncp_obter_contrato_completo",
+        "Consulta, em conjunto, os recursos públicos relacionados a um contrato no PNCP.",
+        "`cnpj` (string), `ano` (inteiro) e `sequencial_contrato` (inteiro).",
+        "agrega consultas GET dos recursos do contrato e não cria, altera ou exclui dados.",
+    ),
+    (
+        "buscar_compras_publicas",
+        "Pesquisa compras públicas nas fontes catalogadas, no Compras.gov.br, no PNCP ou em ambas.",
+        "`texto` (string), `orgao`, `uasg`, `cnpj`, `modalidade`, `data_inicio`, `data_fim`, "
+        "`codigo_material`, `codigo_servico` e `fonte` (`compras`, `pncp` ou `todas`).",
+        "executa apenas consultas GET catalogadas, sem deduplicar ou modificar resultados, "
+        "registros ou fontes.",
+    ),
+)
+_NON_ATOMIC_TOOL_NAMES = {name for name, *_ in _NON_ATOMIC_TOOLS}
 CURATION_FIELDS = {"classification", "implemented", "tool", "exclusion"}
 UNORDERED_LIST_FIELDS = {"enum", "required"}
 CLASSIFICATIONS = {
@@ -1250,6 +1297,26 @@ def _tools_markdown(manifest: dict[str, Any]) -> str:
                 "",
             ]
         )
+    lines.extend(
+        [
+            "## Tools semânticas e diagnóstico",
+            "",
+            "Ferramentas compostas e de diagnóstico que realizam somente consultas de leitura "
+            "nas fontes oficiais.",
+            "",
+        ]
+    )
+    for name, description, parameters, behavior in _NON_ATOMIC_TOOLS:
+        lines.extend(
+            [
+                f"### `{name}`",
+                "",
+                f"- Descrição: {description}",
+                f"- Argumentos principais: {parameters}",
+                f"- Comportamento somente leitura: {behavior}",
+                "",
+            ]
+        )
     return "\n".join(lines)
 
 
@@ -1281,11 +1348,13 @@ def _coverage_markdown(manifest: dict[str, Any]) -> str:
         ]
     )
     for endpoint in endpoints:
-        marker = (
-            "OK"
-            if endpoint.get("classification") == "PUBLIC_USEFUL" and endpoint.get("implemented")
-            else "PENDING"
-        )
+        if endpoint.get("classification") == "AUTHENTICATED":
+            lines.append(
+                f"- `AUTH` {endpoint.get('method')} {endpoint.get('path')}"
+                " | Excluded: authentication_required"
+            )
+            continue
+        marker = "OK" if endpoint.get("implemented") else "PENDING"
         lines.append(f"- `{marker}` {endpoint.get('method')} {endpoint.get('path')}")
     return "\n".join(lines) + "\n"
 
@@ -1304,9 +1373,58 @@ def _render_coverage(path: Path, output: Path | None) -> int:
 def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], list[str]]:
     parsed: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
+    semantic_section_seen = False
     blocks = re.split(r"(?m)^##\s+", document)
     for index, block in enumerate(blocks[1:], start=1):
         lines = block.splitlines()
+        if lines and lines[0] == "Tools semânticas e diagnóstico":
+            if semantic_section_seen:
+                errors.append("duplicate semantic tools section")
+            semantic_section_seen = True
+            semantic_blocks = re.split(r"(?m)^###\s+", "\n".join(lines[2:]))
+            for semantic_index, semantic_block in enumerate(semantic_blocks[1:], start=1):
+                semantic_lines = semantic_block.splitlines()
+                name_match = (
+                    re.fullmatch(r"`([^`]+)`", semantic_lines[0])
+                    if semantic_lines
+                    else None
+                )
+                if name_match is None:
+                    errors.append(f"malformed semantic tool heading at block {semantic_index}")
+                    continue
+                name = name_match.group(1)
+                if name not in _NON_ATOMIC_TOOL_NAMES:
+                    errors.append(f"unknown semantic tool: {name}")
+                    continue
+                if name in parsed:
+                    errors.append(f"duplicate tool block: {name}")
+                description_match = next(
+                    (
+                        re.fullmatch(r"- Descrição: (.*)", line)
+                        for line in semantic_lines[2:]
+                        if line.startswith("- Descrição: ")
+                    ),
+                    None,
+                )
+                parameters_match = next(
+                    (
+                        re.fullmatch(r"- Argumentos principais: (.*)", line)
+                        for line in semantic_lines[2:]
+                        if line.startswith("- Argumentos principais: ")
+                    ),
+                    None,
+                )
+                if description_match is None or not description_match.group(1).strip():
+                    errors.append(f"semantic tool description must be non-empty: {name}")
+                    continue
+                if parameters_match is None or not parameters_match.group(1).strip():
+                    errors.append(f"semantic tool parameters must be non-empty: {name}")
+                    continue
+                parsed[name] = {
+                    "description": " ".join(description_match.group(1).split()),
+                    "parameters": " ".join(parameters_match.group(1).split()),
+                }
+            continue
         name_match = re.fullmatch(r"`((?:compras|pncp)_[a-z0-9_]+)`", lines[0]) if lines else None
         if name_match is None:
             errors.append(f"malformed tool heading at block {index}")
@@ -1370,6 +1488,11 @@ def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], lis
             "description": " ".join(description_match.group(1).split()),
             "parameters": parameters,
         }
+    if not semantic_section_seen:
+        errors.append("missing semantic tools section")
+    for name in _NON_ATOMIC_TOOL_NAMES:
+        if name not in parsed:
+            errors.append(f"missing semantic tool: {name}")
     return parsed, errors
 
 
@@ -1400,6 +1523,12 @@ def _check_tools(tools_path: Path, manifest_path: Path) -> int:
         for endpoint in _manifest_endpoints(manifest)
         if endpoint.get("classification") == "PUBLIC_USEFUL" and endpoint.get("implemented") is True
     }
+    expected.update(
+        {
+            name: {"description": description, "parameters": parameters}
+            for name, description, parameters, _behavior in _NON_ATOMIC_TOOLS
+        }
+    )
     actual_text = tools_path.read_text(encoding="utf-8")
     actual, parse_errors = _parse_tools_document(actual_text)
     if parse_errors or actual != expected or actual_text != _tools_markdown(manifest):

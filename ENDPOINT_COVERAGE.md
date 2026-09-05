@@ -1,0 +1,191 @@
+# Endpoint Coverage
+
+| API | GET oficiais | Públicos úteis | Implementados | Cobertura |
+| --- | ---: | ---: | ---: | ---: |
+| Compras.gov.br | 73 | 69 | 69 | 100.0% |
+| PNCP | 108 | 100 | 100 | 100.0% |
+| **Total** | **181** | **169** | **169** | **100.0%** |
+
+## Endpoints
+
+- `AUTH` GET /alice/avisos-restritos | Excluded: authentication_required
+- `AUTH` GET /alice/compras | Excluded: authentication_required
+- `AUTH` GET /alice/tickets | Excluded: authentication_required
+- `OK` GET /modulo-arp/1.1_consultarARP_Id
+- `OK` GET /modulo-arp/1.2_consultarARP_FimVigencia
+- `OK` GET /modulo-arp/1_consultarARP
+- `OK` GET /modulo-arp/2.1_consultarARPItem_Id
+- `OK` GET /modulo-arp/2_consultarARPItem
+- `OK` GET /modulo-arp/3_consultarUnidadesItem
+- `OK` GET /modulo-arp/4_consultarEmpenhosSaldoItem
+- `OK` GET /modulo-arp/5_consultarAdesoesItem
+- `OK` GET /modulo-contratacoes/1.1_consultarContratacoes_PNCP_14133_Id
+- `OK` GET /modulo-contratacoes/1_consultarContratacoes_PNCP_14133
+- `OK` GET /modulo-contratacoes/2.1_consultarItensContratacoes_PNCP_14133_Id
+- `OK` GET /modulo-contratacoes/2_consultarItensContratacoes_PNCP_14133
+- `OK` GET /modulo-contratacoes/3.1_consultarResultadoItensContratacoes_PNCP_14133_Id
+- `OK` GET /modulo-contratacoes/3_consultarResultadoItensContratacoes_PNCP_14133
+- `OK` GET /modulo-contratos/1.1_consultarContratos_Id
+- `OK` GET /modulo-contratos/1.2_consultarContratos_FimVigencia
+- `OK` GET /modulo-contratos/1_consultarContratos
+- `OK` GET /modulo-contratos/2.1_consultarContratosItem_Id
+- `OK` GET /modulo-contratos/2_consultarContratosItem
+- `OK` GET /modulo-fornecedor/1_consultarFornecedor
+- `OK` GET /modulo-indicadores/1_consultarIndicadoresConsolidados
+- `OK` GET /modulo-indicadores/2_consultarIndicadoresPorPeriodo
+- `OK` GET /modulo-legado/1.1_consultarLicitacao_Id
+- `OK` GET /modulo-legado/1_consultarLicitacao
+- `OK` GET /modulo-legado/2.1_consultarItemLicitacao_Id
+- `OK` GET /modulo-legado/2_consultarItemLicitacao
+- `OK` GET /modulo-legado/3.1_consultarPregoes_Id
+- `OK` GET /modulo-legado/3_consultarPregoes
+- `OK` GET /modulo-legado/4.1_consultarItensPregoes_Id
+- `OK` GET /modulo-legado/4_consultarItensPregoes
+- `OK` GET /modulo-legado/5.1_consultarCompraSemLicitacao_Id
+- `OK` GET /modulo-legado/5_consultarComprasSemLicitacao
+- `OK` GET /modulo-legado/6.1_consultarItensComprasSemLicitacao_Id
+- `OK` GET /modulo-legado/6_consultarCompraItensSemLicitacao
+- `OK` GET /modulo-legado/7_consultarRdc
+- `OK` GET /modulo-material/1_consultarGrupoMaterial
+- `OK` GET /modulo-material/2_consultarClasseMaterial
+- `OK` GET /modulo-material/3_consultarPdmMaterial
+- `OK` GET /modulo-material/4_consultarItemMaterial
+- `OK` GET /modulo-material/5_consultarMaterialNaturezaDespesa
+- `OK` GET /modulo-material/6_consultarMaterialUnidadeFornecimento
+- `OK` GET /modulo-material/7_consultarMaterialCaracteristicas
+- `OK` GET /modulo-ocds/1_releases
+- `OK` GET /modulo-pesquisa-preco/1.1_consultarMaterial_CSV
+- `OK` GET /modulo-pesquisa-preco/1_consultarMaterial
+- `OK` GET /modulo-pesquisa-preco/2.1_consultarMaterialDetalhe_CSV
+- `OK` GET /modulo-pesquisa-preco/2_consultarMaterialDetalhe
+- `OK` GET /modulo-pesquisa-preco/3.1_consultarServico_CSV
+- `OK` GET /modulo-pesquisa-preco/3_consultarServico
+- `OK` GET /modulo-pesquisa-preco/4.1_consultarServicoDetalhe_CSV
+- `OK` GET /modulo-pesquisa-preco/4_consultarServicoDetalhe
+- `OK` GET /modulo-pgc/1.1_consultarPgcDetalhe_CSV
+- `OK` GET /modulo-pgc/1_consultarPgcDetalhe
+- `OK` GET /modulo-pgc/2.1_consultarPgcDetalheCatalogo_CSV
+- `OK` GET /modulo-pgc/2_consultarPgcDetalheCatalogo
+- `OK` GET /modulo-pgc/3.1_consultarPgcAgregacao_CSV
+- `OK` GET /modulo-pgc/3_consultarPgcAgregacao
+- `OK` GET /modulo-servico/1_consultarSecaoServico
+- `OK` GET /modulo-servico/2_consultarDivisaoServico
+- `OK` GET /modulo-servico/3_consultarGrupoServico
+- `OK` GET /modulo-servico/4_consultarClasseServico
+- `OK` GET /modulo-servico/5_consultarSubClasseServico
+- `OK` GET /modulo-servico/6_consultarItemServico
+- `OK` GET /modulo-servico/7_consultarUndMedidaServico
+- `OK` GET /modulo-servico/8_consultarNaturezaDespesaServico
+- `OK` GET /modulo-uasg/1.1_consultarUasg_CSV
+- `OK` GET /modulo-uasg/1_consultarUasg
+- `OK` GET /modulo-uasg/2.1_consultarOrgao_CSV
+- `OK` GET /modulo-uasg/2_consultarOrgao
+- `AUTH` GET /usuarios/consultar | Excluded: authentication_required
+- `OK` GET /v1/amparos-legais
+- `OK` GET /v1/amparos-legais/{id}
+- `OK` GET /v1/catalogos
+- `OK` GET /v1/catalogos/{id}
+- `OK` GET /v1/categoriaItemPcas
+- `OK` GET /v1/categoriaItemPcas/{id}
+- `OK` GET /v1/criterios-julgamentos
+- `OK` GET /v1/criterios-julgamentos/{id}
+- `OK` GET /v1/fontes-orcamentarias
+- `OK` GET /v1/fontes-orcamentarias/{id}
+- `OK` GET /v1/instrumento-convocatorio-modalidade-amparo-legal
+- `OK` GET /v1/instrumento-convocatorio-modalidade-amparo-legal/{amparoLegalId}/{modalidadeId}/{tipoInstrumentoConvocatorioId}
+- `OK` GET /v1/modalidade-criterio-julgamento
+- `OK` GET /v1/modalidade-criterio-julgamento/{modalidadeId}/{criterioJulgamentoId}
+- `OK` GET /v1/modalidade-fonte-orcamentaria
+- `OK` GET /v1/modalidade-fonte-orcamentaria/{modalidadeId}/{fonteOrcamentariaId}
+- `OK` GET /v1/modalidades
+- `OK` GET /v1/modalidades/{id}
+- `OK` GET /v1/modos-disputas
+- `OK` GET /v1/modos-disputas/{id}
+- `OK` GET /v1/orgaos/
+- `OK` GET /v1/orgaos/id/{orgaoId}
+- `OK` GET /v1/orgaos/{cnpj}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos
+- `AUTH` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/{sequencialDocumento}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/contratos
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas
+- `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas/{cnpjOrgao}/{codUnidade}/{tipoParteEnvolvida}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos
+- `AUTH` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/{sequencialDocumento}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/atas/{sequencialAta}/historico
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/atas/{sequencialAta}/historico/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/fonte-orcamentaria
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/fonte-orcamentaria/{fonteOrcamentariaId}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/historico
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/historico/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/imagem
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/imagem/{sequencialImagem}
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/resultados
+- `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens/{numeroItem}/resultados/{sequencialResultado}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/contratacao/{anoContratacao}/{sequencialContratacao}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencialContrato}/instrumentocobranca
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencialContrato}/instrumentocobranca/{sequencialInstrumentoCobranca}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos
+- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/{sequencialDocumento}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/empenhos
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/empenhos/{sequencialEmpenho}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/historico
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/historico/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermoContrato}
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos
+- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/{sequencialDocumento}
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos/quantidade
+- `AUTH` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos/{sequencialDocumento} | Excluded: authentication_required
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/historico
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/historico/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/itens
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/itens/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/itens/{numeroItem}
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/consolidado
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/consolidado/unidades
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/csv
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/valorescategoriaitem
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/consolidado
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/contratacao
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/plano
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/itens/quantidade
+- `OK` GET /v1/orgaos/{cnpj}/pca/{ano}/{sequencial}/valorescategoriaitem
+- `OK` GET /v1/orgaos/{cnpj}/pca/{uasg}/{ano}/sequenciaisplano
+- `OK` GET /v1/orgaos/{cnpj}/unidades
+- `OK` GET /v1/orgaos/{cnpj}/unidades/{codigoUnidade}
+- `OK` GET /v1/portes-empresa
+- `OK` GET /v1/portes-empresa/{id}
+- `OK` GET /v1/tipo-instrumento-convocatorio-modo-disputa
+- `OK` GET /v1/tipo-instrumento-convocatorio-modo-disputa/{tipoInstrumentoConvocatorioId}/{modoDisputaId}
+- `OK` GET /v1/tipos-contratos
+- `OK` GET /v1/tipos-contratos/{id}
+- `OK` GET /v1/tipos-documentos
+- `OK` GET /v1/tipos-documentos/{id}
+- `OK` GET /v1/tipos-instrumentos-cobranca
+- `OK` GET /v1/tipos-instrumentos-cobranca/{id}
+- `OK` GET /v1/tipos-instrumentos-convocatorios
+- `OK` GET /v1/tipos-instrumentos-convocatorios/{id}
+- `OK` GET /v1/tipos-parte-envolvida
+- `OK` GET /v1/tipos-parte-envolvida/{id}
+- `AUTH` GET /v1/usuarios | Excluded: authentication_required
+- `AUTH` GET /v1/usuarios/permissoes | Excluded: authentication_required
+- `AUTH` GET /v1/usuarios/{id} | Excluded: authentication_required

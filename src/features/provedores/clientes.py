@@ -46,6 +46,9 @@ class ComprasClient:
         settings = Settings()  # pyright: ignore[reportCallIssue]
         return ReadOnlyHttpClient(
             self.base_url,
+            requests_per_second=settings.http_requests_per_second,
+            max_concurrency=settings.compras_max_concurrency,
+            provider="compras",
             max_retries=settings.http_max_retries,
             timeout=settings.http_timeout,
             max_document_bytes=(
@@ -69,6 +72,9 @@ class PncpClient:
         settings = Settings()  # pyright: ignore[reportCallIssue]
         return ReadOnlyHttpClient(
             self.base_url,
+            requests_per_second=settings.http_requests_per_second,
+            max_concurrency=settings.pncp_max_concurrency,
+            provider="pncp",
             max_retries=settings.http_max_retries,
             timeout=settings.http_timeout,
             max_document_bytes=(

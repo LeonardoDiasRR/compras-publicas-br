@@ -160,7 +160,9 @@ class QueryService:
         is_list_operation = (
             page_name is not None or page_size_name is not None or token_name is not None
         )
-        if "auto_paginar" in arguments and page_name is None and token_name is None:
+        if "auto_paginar" in arguments and (
+            not is_list_operation or (page_name is None and token_name is None)
+        ):
             raise ValueError("auto_paginar requires a documented query pagination parameter")
         if (
             (limit_requested is not None or "limite_resultados" in arguments)
@@ -316,6 +318,23 @@ class QueryService:
         for operation in operations:
             self._validate_supported_parameters(operation)
             parameters = self._parameters(operation)
+            page_name = self._find_parameter(parameters, ("pagina", "page"))
+            page_size_name = self._find_parameter(
+                parameters, ("tamanhoPagina", "tamanho_pagina", "pageSize", "page_size")
+            )
+            token_name = self._find_parameter(parameters, _TOKEN_PARAMETER_NAMES)
+            is_list_operation = (
+                page_name is not None or page_size_name is not None or token_name is not None
+            )
+            if not is_list_operation:
+                if "auto_paginar" in arguments:
+                    raise ValueError(
+                        "auto_paginar requires a documented query pagination parameter"
+                    )
+                if "limite_resultados" in arguments:
+                    raise ValueError(
+                        "limite_resultados requires a documented pagination parameter"
+                    )
             allowed = set(parameters)
             allowed.update(
                 alias
@@ -329,7 +348,9 @@ class QueryService:
                 )
                 if self._resolve_name(alias, parameters) is not None
             )
-            allowed.update({"formato", "auto_paginar", "limite_resultados"})
+            allowed.add("formato")
+            if is_list_operation:
+                allowed.update({"auto_paginar", "limite_resultados"})
             filtered = {key: value for key, value in arguments.items() if key in allowed}
             response = await self.execute(operation, filtered)
             results[operation.tool or operation.id] = response.model_dump(mode="json")

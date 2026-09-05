@@ -1,0 +1,14 @@
+services:
+  mcp:
+    build: .
+    command: [".venv/bin/python", "-m", "src.features.mcp.servidor", "--transport", "http", "--port", "8000"]
+    environment:
+      MCP_TRANSPORT: http
+      FASTMCP_HOST: "0.0.0.0"
+      HTTP_TIMEOUT: "30"
+      CACHE_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
