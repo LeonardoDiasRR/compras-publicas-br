@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import pytest
+
 from src.features.plugin.armazenamento import (
     atomic_write,
     load_document,
