@@ -2,6 +2,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+
 from src.features.plugin.adaptadores import get_adapter, supported_agent_ids
 from src.features.plugin.modelos import McpRegistration
 
@@ -136,21 +137,65 @@ def test_each_adapter_owns_only_its_built_entry(agent_id: str) -> None:
     assert adapter.owns_entry(entry)
     assert not adapter.owns_entry({"command": "custom"})
 
+    for malformed_pin in (
+        "other-package==0.1.0",
+        "mcp-compras-publicas-br",
+        "mcp-compras-publicas-br==not-a-version",
+        "mcp-compras-publicas-br==1.0.0rc1",
+    ):
+        candidate = dict(entry)
+        if isinstance(candidate.get("command"), list):
+            command = list(candidate["command"])
+            command[2] = malformed_pin
+            candidate["command"] = command
+        else:
+            args = list(candidate["args"])
+            args[1] = malformed_pin
+            candidate["args"] = args
+        assert not adapter.owns_entry(candidate)
+
 
 @pytest.mark.parametrize("agent_id", sorted(EXPECTED))
 def test_each_adapter_builds_the_fixed_versioned_uvx_entry(agent_id: str) -> None:
     entry = get_adapter(agent_id).build_entry("0.1.0")
 
-    assert entry["command"] == "uvx"
-    assert entry["args"] == [
+    pinned_args = [
         "--from",
         "mcp-compras-publicas-br==0.1.0",
         "mcp-compras-publicas-br",
     ]
-    managed_by = entry["managedBy"]
-    assert isinstance(managed_by, dict)
-    assert managed_by["package"] == "mcp-compras-publicas-br"
-    assert managed_by["schemaVersion"] == 1
+
+    if agent_id == "generic":
+        assert entry["command"] == "uvx"
+        assert entry["args"] == pinned_args
+        managed_by = entry["managedBy"]
+        assert isinstance(managed_by, dict)
+        assert managed_by["package"] == "mcp-compras-publicas-br"
+        assert type(managed_by["schemaVersion"]) is int
+        assert managed_by["schemaVersion"] == 1
+    elif agent_id == "opencode":
+        assert entry == {
+            "type": "local",
+            "command": ["uvx", *pinned_args],
+        }
+    elif agent_id == "cursor":
+        assert entry == {
+            "type": "stdio",
+            "command": "uvx",
+            "args": pinned_args,
+        }
+    else:
+        assert entry["command"] == "uvx"
+        assert entry["args"] == pinned_args
+        assert "managedBy" not in entry
+
+
+def test_openclaw_uses_native_unset_command(tmp_path: Path) -> None:
+    target = get_adapter("openclaw").resolve_target(
+        "project", project_root=tmp_path, home=tmp_path / "home"
+    )
+
+    assert target.native_remove == ("openclaw", "mcp", "unset")
 
 
 @pytest.mark.parametrize("agent_id", sorted(EXPECTED))

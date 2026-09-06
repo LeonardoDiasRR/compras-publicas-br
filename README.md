@@ -14,6 +14,31 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) somente leit
 
 As especificações OpenAPI oficiais são a fonte do catálogo e da verificação de cobertura. Implementações de terceiros, wrappers, scrapers e blogs não são contratos primários.
 
+## Instalação como plugin
+
+O pacote exige Python 3.12 ou superior e `uv`. Para registrar o plugin no projeto atual:
+
+```bash
+uvx mcp-compras-publicas-br install --agent <id>
+```
+
+Para registrar o plugin no escopo do usuário:
+
+```bash
+uvx mcp-compras-publicas-br install --agent <id> --scope user
+```
+
+O escopo padrão é `project`. O instalador procura a raiz Git subindo a partir do diretório atual; se não encontrar Git, usa o diretório atual e emite um aviso.
+
+Atualize ou remova uma instalação com:
+
+```bash
+uvx mcp-compras-publicas-br update --agent <id>
+uvx mcp-compras-publicas-br uninstall --agent <id>
+```
+
+Adicione `--scope user` aos comandos para operar na instalação global. Consulte [`docs/agents/`](docs/agents/) para os IDs e arquivos de cada agente.
+
 ## Instalação local com uv
 
 Requer Python 3.12 ou superior.

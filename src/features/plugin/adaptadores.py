@@ -9,6 +9,7 @@ from src.features.plugin.modelos import AgentId, ScopeName
 from src.features.plugin.versoes import PACKAGE_NAME, versioned_command
 
 ConfigFormat = Literal["json", "json5", "toml"]
+EntryStyle = Literal["generic", "opencode", "cursor", "command_args"]
 McpEntry = dict[str, object]
 
 
@@ -57,6 +58,7 @@ class _Adapter:
     native_add: tuple[str, ...] | None = None
     native_remove: tuple[str, ...] | None = None
     validation_command: tuple[str, ...] | None = None
+    entry_style: EntryStyle = "command_args"
 
     def resolve_target(
         self, scope: ScopeName, project_root: Path, home: Path
@@ -78,41 +80,69 @@ class _Adapter:
 
     def build_entry(self, version: str) -> McpEntry:
         _parse_stable_version(version)
-        return {
-            "command": "uvx",
-            "args": versioned_command(version)[1:],
-            "managedBy": {"package": PACKAGE_NAME, "schemaVersion": 1},
-        }
+        command = versioned_command(version)
+        if self.entry_style == "generic":
+            return {
+                "command": command[0],
+                "args": command[1:],
+                "managedBy": {"package": PACKAGE_NAME, "schemaVersion": 1},
+            }
+        if self.entry_style == "opencode":
+            return {"type": "local", "command": command}
+        if self.entry_style == "cursor":
+            return {"type": "stdio", "command": command[0], "args": command[1:]}
+        return {"command": command[0], "args": command[1:]}
 
     def owns_entry(self, value: object) -> bool:
         if not isinstance(value, Mapping):
             return False
         entry = cast(Mapping[str, object], value)
-        if entry.get("command") != "uvx":
+        if self.entry_style == "opencode":
+            if not _has_exact_keys(entry, "type", "command"):
+                return False
+            if entry.get("type") != "local":
+                return False
+            raw_command = entry.get("command")
+            if not isinstance(raw_command, Sequence) or isinstance(
+                raw_command, (str, bytes)
+            ):
+                return False
+            command = cast(Sequence[object], raw_command)
+            return len(command) == 4 and command[0] == "uvx" and _owns_command(command, 2)
+
+        if self.entry_style == "cursor":
+            if not _has_exact_keys(entry, "type", "command", "args"):
+                return False
+            if entry.get("type") != "stdio" or entry.get("command") != "uvx":
+                return False
+            raw_args = entry.get("args")
+            if not isinstance(raw_args, Sequence) or isinstance(raw_args, (str, bytes)):
+                return False
+            return _owns_command(cast(Sequence[object], raw_args), 1)
+
+        expected_keys = (
+            ("command", "args", "managedBy")
+            if self.entry_style == "generic"
+            else ("command", "args")
+        )
+        if not _has_exact_keys(entry, *expected_keys) or entry.get("command") != "uvx":
             return False
         raw_args = entry.get("args")
-        args: Sequence[object]
-        if isinstance(raw_args, Sequence) and not isinstance(raw_args, (str, bytes)):
-            args = cast(Sequence[object], raw_args)
-        else:
+        if not isinstance(raw_args, Sequence) or isinstance(raw_args, (str, bytes)):
             return False
-        if len(args) != 3 or args[0] != "--from" or args[2] != PACKAGE_NAME:
+        if not _owns_command(cast(Sequence[object], raw_args), 1):
             return False
-        version_spec = args[1]
-        if not isinstance(version_spec, str) or not _is_stable_pin(version_spec):
-            return False
+        if self.entry_style != "generic":
+            return True
         managed_by = entry.get("managedBy")
         if not isinstance(managed_by, Mapping):
             return False
         metadata = cast(Mapping[str, object], managed_by)
-        managed_package = metadata.get("package")
-        schema_version = metadata.get("schemaVersion")
         return (
-            isinstance(managed_package, str)
-            and managed_package == PACKAGE_NAME
-            and type(schema_version) is int
-            and schema_version == 1
-            and metadata == {"package": PACKAGE_NAME, "schemaVersion": 1}
+            _has_exact_keys(metadata, "package", "schemaVersion")
+            and metadata.get("package") == PACKAGE_NAME
+            and type(metadata.get("schemaVersion")) is int
+            and metadata.get("schemaVersion") == 1
         )
 
     def validate_target(self, target: AgentTarget) -> None:
@@ -135,6 +165,21 @@ class _Adapter:
 
 def _skill(*parts: str) -> tuple[str, ...]:
     return (*parts, "SKILL.md")
+
+
+def _has_exact_keys(value: Mapping[str, object], *keys: str) -> bool:
+    return len(value) == len(keys) and all(key in value for key in keys)
+
+
+def _owns_command(command: Sequence[object], pin_index: int) -> bool:
+    if len(command) != pin_index + 2 or command[pin_index - 1] != "--from":
+        return False
+    version_spec = command[pin_index]
+    return (
+        isinstance(version_spec, str)
+        and _is_stable_pin(version_spec)
+        and command[pin_index + 1] == PACKAGE_NAME
+    )
 
 
 def _valid_parts(value: object, allow_none: bool = False) -> bool:
@@ -221,6 +266,7 @@ _REGISTRY: dict[str, _Adapter] = {
         _skill(".opencode", "skills", PACKAGE_NAME),
         _skill(".config", "opencode", "skills", PACKAGE_NAME),
         ("mcp",),
+        entry_style="opencode",
     ),
     # https://deepseek-harness.github.io/deepseek-harness/
     "deepseek-harness": _Adapter(
@@ -265,6 +311,7 @@ _REGISTRY: dict[str, _Adapter] = {
         _skill(".cursor", "skills", PACKAGE_NAME),
         _skill(".cursor", "skills", PACKAGE_NAME),
         ("mcpServers",),
+        entry_style="cursor",
     ),
     # https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp
     # https://hermes-agent.nousresearch.com/docs/user-guide/features/skills
@@ -289,7 +336,7 @@ _REGISTRY: dict[str, _Adapter] = {
         _skill(".openclaw", "skills", PACKAGE_NAME),
         ("mcp", "servers"),
         ("openclaw", "mcp", "add"),
-        ("openclaw", "mcp", "remove"),
+        ("openclaw", "mcp", "unset"),
         ("openclaw", "mcp", "list"),
     ),
     "generic": _Adapter(
@@ -301,6 +348,7 @@ _REGISTRY: dict[str, _Adapter] = {
         (".agent", "skills", "compras-publicas-br.md"),
         (".agent", "skills", "compras-publicas-br.md"),
         ("mcpServers",),
+        entry_style="generic",
     ),
 }
 

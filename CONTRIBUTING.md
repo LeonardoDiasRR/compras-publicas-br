@@ -1,5 +1,48 @@
 # Contributing
 
+## Adding a New Agent Adapter
+
+Every supported agent must have a stable, unique agent ID registered in the
+plugin registry and accepted by the CLI. A new adapter contribution must also:
+
+1. Resolve the agent's configuration target for both `project` and `user`
+   scopes. Project targets must follow the repository-root rules; user targets
+   must use the platform's documented global configuration location.
+2. Define configuration paths and serialization for Windows, Linux, and macOS.
+   Do not detect the agent implicitly or accept arbitrary paths from input.
+3. Add fixtures for project and user configurations, including existing
+   unrelated settings that must survive an installation or update.
+4. Add the managed skill in Brazilian Portuguese (`pt-BR`) with the package
+   ownership marker. The skill must preserve the server's read-only behavior,
+   provenance, and error-handling guidance.
+5. Add merge tests covering insertion, idempotent updates, preservation of
+   unrelated configuration, conflicts with unmanaged entries, and safe removal.
+6. Add or update the agent documentation with its ID, supported scopes,
+   configuration locations, install/update/uninstall examples, and limitations.
+7. Validate the adapter and its fixtures on Windows, Linux, and macOS. Tests
+   must use controlled fixtures or isolated subprocesses and must not require an
+   agent installation or live upstream API access.
+
+## Local Setup and Checks
+
+Install the locked development environment from the repository root:
+
+```bash
+uv sync --locked --all-groups
+```
+
+Run the offline test suite and static checks before submitting a change:
+
+```bash
+uv run pytest -m "not live" -q
+uv run ruff check .
+uv run pyright
+uv build
+```
+
+The offline suite must not contact production APIs. Live probes remain opt-in
+and are not part of the contribution gate.
+
 ## Adding a New Upstream Endpoint
 
 Every new endpoint must follow this workflow. The upstream official specification is the source of truth; wrappers, scrapers, third-party clients, blogs, and existing MCP servers are not contracts.

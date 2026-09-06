@@ -13,6 +13,28 @@ boundary that selects an upstream API. This keeps parameter validation,
 pagination, caching, error normalization, and provenance consistent for every
 endpoint.
 
+The published plugin has a separate installation path:
+
+```text
+plugin CLI -> InstallerService -> AgentAdapter
+```
+
+The plugin CLI selects the agent and `project` or `user` scope. `InstallerService`
+resolves the target, obtains the running package version, merges the MCP entry
+and managed skill, and writes changes atomically. `AgentAdapter` owns the
+agent-specific configuration format, location, and validation. The installer
+does not call upstream APIs or alter the MCP request path.
+
+The registry entry for every agent launches the server locally through `stdio`
+with an exact package pin. The generated command is equivalent to:
+
+```text
+uvx --from mcp-compras-publicas-br==<exact-version> mcp-compras-publicas-br
+```
+
+The version is the package version used by the installer, never an unpinned
+latest-version reference.
+
 ## Components
 
 ### MCP server
@@ -186,11 +208,18 @@ introduce another HTTP path around `QueryService`.
 The executable server supports:
 
 - `stdio` for local MCP clients and the default invocation;
-- `http` for a streamable HTTP deployment, with the configured port (default
-  `8000`).
+- direct FastMCP `http` transport when explicitly selected from Python, using a
+  configurable port (default `8000`).
 
-Transport changes the MCP connection mechanism only. It does not change the
-tool registry, provider origins, read-only guarantees, or query flow.
+```text
+uv run python -m src.features.mcp.servidor --transport http
+```
+
+The HTTP transport is a direct Python process and is independent of the plugin
+installation path. It does not change the tool registry, provider origins,
+read-only guarantees, or query flow.
+
+Transport changes only the MCP connection mechanism.
 
 ## Caching
 

@@ -158,7 +158,10 @@ class InstallerService:
             warnings.append(self._unmanaged_skill_warning())
         if not managed_entry and not managed_skill:
             warnings.append("No managed MCP entry or skill was found.")
-        if warnings and (existing is _CONFLICT or (existing is not _MISSING and not managed_entry)):
+        has_entry_conflict = existing is _CONFLICT or (
+            existing is not _MISSING and not managed_entry
+        )
+        if has_entry_conflict and not managed_skill:
             return self._result(False, "", tuple(warnings))
 
         removed_document, config_changed = remove_mcp_entry(

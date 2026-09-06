@@ -39,6 +39,40 @@ Path parameters are validated against the endpoint catalog and URL-encoded
 before they are rendered. Query parameters are likewise limited to parameters
 declared by the catalog and validated against their declared schemas.
 
+## Plugin Installer Controls
+
+The plugin installer accepts only a supported agent adapter and the `project` or
+`user` scope. Project targets stay below the detected project root, and user
+targets stay below the user home directory; arbitrary destination paths are not
+accepted.
+
+The installer rejects traversal segments and any resolved target outside the
+selected scope. It merges only the `compras-publicas-br` entry, preserves other
+configuration, and never overwrites an unrecognized entry or an unmanaged
+skill. Configuration and skill changes are written atomically.
+
+Generic `.agent` configuration entries carry the exact package and schema
+metadata marker `managedBy: {package: mcp-compras-publicas-br, schemaVersion: 1}`.
+Native adapters recognize ownership only through their documented exact native
+entry shape and pinned command. They do not add or accept `managedBy` or any
+other unknown field in non-generic formats. This includes Hermes Agent, whose
+fixed compatibility target is `.hermes/config.json5`; its native entry must
+match the documented JSON5 shape and the exact stable
+`mcp-compras-publicas-br==<version>` pin. Managed skills must carry the
+`managed-by: mcp-compras-publicas-br; format: 1` marker. Install, update, and
+uninstall act on existing data only when the applicable marker or native
+signature and the expected entry shape confirm ownership.
+
+Configuration is treated as data. The installer never executes commands,
+arguments, hooks, or other values read from an existing configuration; it emits
+only the fixed `uvx` command for this package. The emitted command always pins
+an exact stable package version as
+`mcp-compras-publicas-br==<version>`.
+
+Installer output and logs must not contain configuration contents, credentials,
+tokens, or other secrets. Paths and warnings must be limited to the operational
+information needed to report the result.
+
 ## Credentials and Secrets
 
 The supported upstream APIs are public and the application does not require
@@ -65,11 +99,10 @@ following:
 - a restrictive CORS policy containing only explicitly required origins,
   methods, and headers, or CORS disabled when it is not needed.
 
-The checked-in Docker Compose configuration is a localhost-only development
-convenience. Its HTTP port mapping is not a production security boundary; do
-not expose it directly to a network or use it as a public deployment. Any
-remote deployment must place the MCP server behind the controls above before
-making the service reachable by untrusted clients.
+An HTTP MCP endpoint bound only to localhost is a local transport choice, not a
+write path: it remains subject to the upstream `GET`-only boundary. It does not
+need the public remote controls above unless it is exposed beyond the local
+machine.
 
 These controls belong to the remote deployment boundary. The upstream APIs
 being public does not make an unauthenticated remote MCP server safe.
