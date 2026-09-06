@@ -13,7 +13,13 @@ dependencies = [
   "pydantic>=2.10,<3",
   "pydantic-settings>=2.7,<3",
   "PyYAML>=6,<7",
+  "tomlkit>=0.13,<1",
+  "json5>=0.10,<1",
+  "packaging>=24,<26",
 ]
+
+[project.scripts]
+mcp-compras-publicas-br = "src.features.plugin.cli:main"
 
 [dependency-groups]
 dev = [
