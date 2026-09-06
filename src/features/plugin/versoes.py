@@ -1,5 +1,5 @@
 import importlib.metadata
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import cast
 
 import httpx
@@ -54,6 +54,19 @@ def latest_stable_version(fetcher: ReleasesFetcher | None = None) -> str:
     stable_versions: list[Version] = []
     for raw_version in releases:
         if not isinstance(raw_version, str):
+            continue
+        release_files = releases[raw_version]
+        if not isinstance(release_files, Sequence) or not release_files:
+            continue
+        release_files = cast(Sequence[object], release_files)
+        if not any(
+            isinstance(file, Mapping)
+            and (
+                "yanked" not in (file_metadata := cast(Mapping[str, object], file))
+                or file_metadata["yanked"] is False
+            )
+            for file in release_files
+        ):
             continue
         try:
             parsed = Version(raw_version)

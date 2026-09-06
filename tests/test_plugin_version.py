@@ -1,6 +1,7 @@
 import importlib.metadata
 
 import pytest
+
 from src.features.plugin.modelos import PluginError
 from src.features.plugin.versoes import (
     installed_version,
@@ -42,6 +43,40 @@ def test_latest_stable_version_ignores_prereleases() -> None:
     }
 
     assert latest_stable_version(lambda: payload) == "0.1.0"
+
+
+def test_latest_stable_version_skips_unavailable_stable_releases() -> None:
+    payload = {
+        "releases": {
+            "0.3.0": [],
+            "0.2.0": [{"yanked": True}, {"yanked": True}],
+            "0.1.0": [{"yanked": False}],
+        }
+    }
+
+    assert latest_stable_version(lambda: payload) == "0.1.0"
+
+
+def test_latest_stable_version_accepts_mixed_yanked_files() -> None:
+    payload = {
+        "releases": {
+            "0.3.0": [{"yanked": True}, {"yanked": False}],
+            "0.2.0": [{"yanked": False}],
+        }
+    }
+
+    assert latest_stable_version(lambda: payload) == "0.3.0"
+
+
+def test_latest_stable_version_skips_malformed_yanked_metadata() -> None:
+    payload = {
+        "releases": {
+            "0.3.0": [{"yanked": "false"}],
+            "0.2.0": [{"yanked": False}],
+        }
+    }
+
+    assert latest_stable_version(lambda: payload) == "0.2.0"
 
 
 @pytest.mark.parametrize(
