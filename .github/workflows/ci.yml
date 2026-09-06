@@ -2,30 +2,23 @@ name: CI
 on: [pull_request, push]
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
           version: "0.8.17"
-      - run: uv sync --all-groups --frozen
+      - run: uv sync --locked --all-groups
       - run: uv run ruff check .
       - run: uv run pyright
-      - run: uv run pytest -m "not live" -q
+      - run: uv run --offline pytest -m "not live" -q
       - run: uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
       - name: Verify read-only HTTP surface
-        shell: bash
         run: |
-          if rg -n '\.(post|put|patch|delete)\(' src/shared/http_readonly.py src/features/provedores; then
-            echo "Forbidden HTTP mutation method found."
-            exit 1
-          else
-            status=$?
-            if [ "$status" -eq 1 ]; then
-              exit 0
-            fi
-            echo "Read-only scan failed with rg status $status."
-            exit "$status"
-          fi
+          uv run python -c "import re, sys; from pathlib import Path; pattern = re.compile(r'\.(post|put|patch|delete)\('); roots = [Path('src/shared/http_readonly.py'), Path('src/features/provedores')]; missing = [str(path) for path in roots if not path.exists()]; sys.exit('Missing read-only scan root(s): ' + ', '.join(missing)) if missing else None; files = [roots[0], *roots[1].rglob('*.py')]; matches = [f'{path}:{line_number}:{line}' for path in files for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1) if pattern.search(line)]; print('\n'.join(matches)) if matches else None; print('Forbidden HTTP mutation method found.', file=sys.stderr) if matches else None; sys.exit(1 if matches else 0)"
       - run: uv build
+      - run: uv run python -m src.features.plugin.cli --help
