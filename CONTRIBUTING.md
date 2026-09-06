@@ -1,37 +1,44 @@
-# Contributing
+# Contribuição
 
-## Adding a New Agent Adapter
+## Adicionando um Novo Adaptador de Agente
 
-Every supported agent must have a stable, unique agent ID registered in the
-plugin registry and accepted by the CLI. A new adapter contribution must also:
+Todo agente suportado deve ter um ID de agente estável e exclusivo, registrado
+no registro de plugins e aceito pela CLI. Uma contribuição que adicione um novo
+adaptador também deve:
 
-1. Resolve the agent's configuration target for both `project` and `user`
-   scopes. Project targets must follow the repository-root rules; user targets
-   must use the platform's documented global configuration location.
-2. Define configuration paths and serialization for Windows, Linux, and macOS.
-   Do not detect the agent implicitly or accept arbitrary paths from input.
-3. Add fixtures for project and user configurations, including existing
-   unrelated settings that must survive an installation or update.
-4. Add the managed skill in Brazilian Portuguese (`pt-BR`) with the package
-   ownership marker. The skill must preserve the server's read-only behavior,
-   provenance, and error-handling guidance.
-5. Add merge tests covering insertion, idempotent updates, preservation of
-   unrelated configuration, conflicts with unmanaged entries, and safe removal.
-6. Add or update the agent documentation with its ID, supported scopes,
-   configuration locations, install/update/uninstall examples, and limitations.
-7. Validate the adapter and its fixtures on Windows, Linux, and macOS. Tests
-   must use controlled fixtures or isolated subprocesses and must not require an
-   agent installation or live upstream API access.
+1. Resolva o destino de configuração do agente para os escopos `project` e
+   `user`. Os destinos de projeto devem seguir as regras da raiz do repositório;
+   os destinos de usuário devem usar o local global de configuração documentado
+   pela plataforma.
+2. Defina os caminhos de configuração e a serialização para Windows, Linux e
+   macOS. Não detecte o agente implicitamente nem aceite caminhos arbitrários na
+   entrada.
+3. Adicione fixtures para as configurações de projeto e usuário, incluindo
+   configurações não relacionadas existentes que devem sobreviver a uma
+   instalação ou atualização.
+4. Adicione a skill gerenciada em português do Brasil (`pt-BR`) com o marcador
+   de propriedade do pacote. A skill deve preservar o comportamento somente
+   leitura do servidor, a proveniência e as orientações de tratamento de erros.
+5. Adicione testes de merge que cubram inserção, atualizações idempotentes,
+   preservação de configurações não relacionadas, conflitos com entradas não
+   gerenciadas e remoção segura.
+6. Adicione ou atualize a documentação do agente com seu ID, escopos
+   suportados, locais de configuração, exemplos de instalação/atualização/
+   desinstalação e limitações.
+7. Valide o adaptador e suas fixtures no Windows, Linux e macOS. Os testes
+   devem usar fixtures controladas ou subprocessos isolados e não devem exigir
+   uma instalação do agente nem acesso à API de origem em tempo real.
 
-## Local Setup and Checks
+## Configuração Local e Verificações
 
-Install the locked development environment from the repository root:
+Instale as dependências com o lockfile travado a partir da raiz do repositório:
 
 ```bash
 uv sync --locked --all-groups
 ```
 
-Run the offline test suite and static checks before submitting a change:
+Execute a suíte de testes offline e as verificações estáticas antes de enviar
+uma alteração:
 
 ```bash
 uv run pytest -m "not live" -q
@@ -40,33 +47,68 @@ uv run pyright
 uv build
 ```
 
-The offline suite must not contact production APIs. Live probes remain opt-in
-and are not part of the contribution gate.
+A suíte offline não deve contatar APIs de produção. As sondagens live continuam
+opt-in e não fazem parte do gate de contribuição.
 
-## Adding a New Upstream Endpoint
+## Adicionando um Novo Endpoint da API de Origem
 
-Every new endpoint must follow this workflow. The upstream official specification is the source of truth; wrappers, scrapers, third-party clients, blogs, and existing MCP servers are not contracts.
+Todo novo endpoint deve seguir este fluxo de trabalho. A especificação oficial da
+API de origem é a fonte de verdade; wrappers, scrapers, clientes de terceiros,
+blogs e servidores MCP existentes não são contratos.
 
-1. **Discover the official specification.** Confirm the endpoint in the current official OpenAPI or API documentation for Compras.gov.br or PNCP. Verify the HTTP method, path, parameters, security requirements, response schema, and upstream base URL.
-2. **Create an immutable snapshot.** Save the unmodified official specification under `specs/upstream/<provider>/<YYYY-MM-DD>.json`. Record or update the snapshot reference and OpenAPI version in `coverage/endpoints.yaml`.
-3. **Classify the endpoint.** Add the endpoint to the catalog and classify it explicitly. Only a public, useful, operational `GET` belongs in the implemented coverage denominator. Record a documented exclusion reason for endpoints that are authenticated, non-GET, deprecated, unusable, or outside the project scope.
-4. **Write the Portuguese name and description.** Give the endpoint a stable, clear Portuguese tool name and a Portuguese description based on the official semantics. Tool names must be unique, provider-prefixed, match `^(compras|pncp)_[a-z0-9_]+$`, and be no longer than 128 characters. Do not expose an opaque `operationId` as the user-facing name or invent behavior not present in the official contract.
-5. **Implement the provider adapter.** Add or update the appropriate provider adapter so it uses the fixed upstream base URL, preserves the official path and parameter semantics, and adapts only provider-specific transport or pagination details.
-6. **Implement the service path.** Route the operation through the shared consultation service for parameter validation, execution, provenance, and normalized responses. Do not duplicate HTTP policy or endpoint execution logic in the tool.
-7. **Register the MCP tool.** Add the one-to-one read-only tool registration using the manifest entry, Portuguese name, Portuguese description, and validated parameters.
-8. **Add the contract test.** Test the adapter, service, and tool contract with the upstream response shape and error behavior. Assert the method, fixed base URL, path, parameters, response envelope, and relevant provenance. Do not depend on live production for the normal test suite.
-9. **Update the manifest.** Set the endpoint classification, implementation status, tool name, Portuguese description, parameters, response contract, and snapshot reference in `coverage/endpoints.yaml`. Keep the manifest and implementation one-to-one.
-10. **Regenerate the documentation.** Regenerate the manifest-derived tool and coverage documents:
+1. **Descubra a especificação oficial.** Confirme o endpoint na documentação
+   documentação oficial atual do Compras.gov.br ou PNCP, em formato OpenAPI.
+   Verifique o método HTTP, o caminho, os parâmetros, os requisitos de segurança,
+   o schema de resposta e a URL base da API de origem.
+2. **Crie um snapshot imutável.** Salve a especificação oficial não modificada
+   em `specs/upstream/<provider>/<YYYY-MM-DD>.json`. Registre ou atualize a
+   referência do snapshot e a versão da especificação OpenAPI em
+   `coverage/endpoints.yaml`.
+3. **Classifique o endpoint.** Adicione o endpoint ao catálogo e classifique-o
+   explicitamente. Somente um `GET` público, útil e operacional pertence ao
+   denominador da cobertura implementada. Registre um motivo de exclusão
+   documentado para endpoints autenticados, não-GET, obsoletos, inutilizáveis
+   ou fora do escopo do projeto.
+4. **Escreva o nome e a descrição em português.** Dê ao endpoint um nome de
+   ferramenta estável e claro em português e uma descrição em português baseada
+   na semântica oficial. Os nomes das ferramentas devem ser exclusivos, ter o
+   provider como prefixo, corresponder a `^(compras|pncp)_[a-z0-9_]+$` e ter no
+   máximo 128 caracteres. Não exponha um `operationId` opaco como nome voltado
+   ao usuário nem invente comportamento que não esteja presente no contrato
+   oficial.
+5. **Implemente o adaptador do provedor.** Adicione ou atualize o adaptador do
+   provedor apropriado para que ele use a URL base fixa da API de origem, preserve
+   o caminho oficial e a semântica dos parâmetros e adapte apenas detalhes de
+   transporte ou paginação específicos do provedor.
+6. **Implemente o caminho do serviço.** Encaminhe a operação pelo serviço de
+   consulta compartilhado para validação de parâmetros, execução, proveniência
+   e respostas normalizadas. Não duplique a política HTTP nem a lógica de
+   execução do endpoint na ferramenta.
+7. **Registre a ferramenta MCP.** Adicione o registro da ferramenta somente
+   leitura em uma relação um-para-um usando a entrada do manifest, o nome em
+   português, a descrição em português e os parâmetros validados.
+8. **Adicione o teste de contrato.** Teste o contrato do adaptador, do serviço
+   e da ferramenta com o formato da resposta da API de origem e o comportamento
+   de erros. Verifique o método, a URL base fixa, o caminho, os parâmetros, o
+   envelope de resposta e a proveniência relevante. Não dependa da produção
+   live para a suíte de testes normal.
+9. **Atualize o manifest.** Defina a classificação do endpoint, o status de
+   implementação, o nome da ferramenta, a descrição em português, os
+   parâmetros, o contrato de resposta e a referência do snapshot em
+   `coverage/endpoints.yaml`. Mantenha o manifest e a implementação em uma
+   relação um-para-um.
+10. **Regenere a documentação.** Regenere os documentos de ferramentas e de
+    cobertura derivados do manifest:
     ```bash
     uv run python -m src.features.catalogo.catalogo render-tools coverage/endpoints.yaml --output TOOLS.md
     uv run python -m src.features.catalogo.catalogo render-coverage coverage/endpoints.yaml --output ENDPOINT_COVERAGE.md
     ```
-    Verify both generated documents:
+     Verifique os dois documentos gerados:
     ```bash
     uv run python -m src.features.catalogo.catalogo --check-tools TOOLS.md coverage/endpoints.yaml
     uv run python -m src.features.catalogo.catalogo --check-coverage-doc ENDPOINT_COVERAGE.md coverage/endpoints.yaml
     ```
-11. **Restore coverage to 100%.** Run the complete checks:
+11. **Restaure a cobertura para 100%.** Execute todas as verificações:
     ```bash
     uv run ruff check .
     uv run pyright
@@ -75,26 +117,40 @@ Every new endpoint must follow this workflow. The upstream official specificatio
     rg -n '\.(post|put|patch|delete)\(' src/shared/http_readonly.py src/features/provedores
     uv build
     ```
-    The read-only scan must produce no matches. A new public, useful `GET` must be implemented or explicitly classified with a documented exclusion. Do not consider the endpoint complete while the coverage gate reports anything below `100%`.
+     A varredura somente leitura não deve produzir correspondências. Um novo
+     `GET` público e útil deve ser implementado ou classificado explicitamente
+     com uma exclusão documentada. Não considere o endpoint concluído enquanto
+     o gate de cobertura reportar qualquer valor abaixo de `100%`.
 
-## Non-Negotiable Boundaries
+## Limites Inegociáveis
 
-- The MCP is strictly read-only. Never add or expose `POST`, `PUT`, `PATCH`, or `DELETE` operations.
-- Never accept arbitrary URLs, hosts, or upstream base URLs from tool input. Provider origins are fixed in the provider adapters and enforced by the shared HTTP client.
-- Never commit, embed, transmit, or log secrets, credentials, API keys, tokens, cookies, or other authentication material. Do not expose authenticated endpoints as public tools.
-- Never bypass relative-path and traversal protections, or pass undocumented path or query parameters around catalog validation.
-- Never mask upstream errors. Preserve the upstream status, error details, and provenance in the normalized error; do not replace failures with an empty result, a fabricated success, or a generic success message.
-- Do not bypass the catalog, shared consultation service, provider adapter, or contract tests for a shortcut implementation.
+- O MCP é estritamente somente leitura. Nunca adicione ou exponha operações
+  `POST`, `PUT`, `PATCH` ou `DELETE`.
+- Nunca aceite URLs, hosts ou URLs base arbitrários da API de origem na entrada
+  da ferramenta. As origens dos provedores são fixadas nos adaptadores dos
+  provedores e impostas pelo cliente HTTP compartilhado.
+- Nunca faça commit, incorpore, transmita ou registre secrets, credenciais,
+  chaves de API, tokens, cookies ou outro material de autenticação. Não exponha
+  endpoints autenticados como ferramentas públicas.
+- Nunca contorne as proteções de caminho relativo e traversal nem passe
+  parâmetros de caminho ou de consulta não documentados por fora da validação
+  do catálogo.
+- Nunca oculte erros da API de origem. Preserve o status da API de origem, os
+  detalhes do erro e a proveniência no erro normalizado; não substitua falhas por
+  um resultado vazio, um sucesso fabricado ou uma mensagem de sucesso genérica.
+- Não contorne o catálogo, o serviço de consulta compartilhado, o adaptador do
+  provedor ou os testes de contrato para uma implementação rápida.
 
-## Completion Checklist
+## Checklist de Conclusão
 
-- [ ] Official specification located and verified.
-- [ ] Unmodified dated snapshot stored and referenced.
-- [ ] Endpoint classified with an explicit justification.
-- [ ] Portuguese tool name and description added.
-- [ ] Provider adapter and shared service path implemented.
-- [ ] Read-only MCP tool registered.
-- [ ] Contract tests cover success and upstream error behavior.
-- [ ] `coverage/endpoints.yaml` updated.
-- [ ] `TOOLS.md` and `ENDPOINT_COVERAGE.md` regenerated and verified.
-- [ ] Full checks pass with coverage at `100%`.
+- [ ] Especificação oficial localizada e verificada.
+- [ ] Snapshot datado e não modificado armazenado e referenciado.
+- [ ] Endpoint classificado com uma justificativa explícita.
+- [ ] Nome e descrição da ferramenta em português adicionados.
+- [ ] Adaptador do provedor e caminho do serviço compartilhado implementados.
+- [ ] Ferramenta MCP somente leitura registrada.
+- [ ] Testes de contrato cobrem o sucesso e o comportamento de erros da API de
+  origem.
+- [ ] `coverage/endpoints.yaml` atualizado.
+- [ ] `TOOLS.md` e `ENDPOINT_COVERAGE.md` regenerados e verificados.
+- [ ] Todas as verificações passam com a cobertura em `100%`.

@@ -1,22 +1,22 @@
-# Changelog
+# Registro de alterações
 
-## [Unreleased]
+## [Não lançado]
 
-### Added
+### Adicionado
 
-- Initial read-only Compras.gov.br/PNCP MCP server.
-- PyPI package with `uvx` support, including documented install, update, and uninstall commands.
-- Ten agent adapters.
-- pt-BR skills for working with the server.
-- Versioned OpenAPI snapshots.
-- Project manifest.
-- Coverage gate.
-- Drift detection.
+- Servidor MCP inicial somente leitura do Compras.gov.br/PNCP.
+- Pacote PyPI com suporte a `uvx`, incluindo comandos documentados de instalação, atualização e desinstalação.
+- Dez adaptadores de agentes.
+- Skills em pt-BR para trabalhar com o servidor.
+- Snapshots versionados do OpenAPI.
+- Manifesto do projeto.
+- gate obrigatório de cobertura.
+- Detecção de divergências.
 
-### Removed
+### Removido
 
-- Removed obsolete Docker and Docker Compose packaging from the project.
+- Removido do projeto o empacotamento obsoleto do Docker e do Docker Compose.
 
-### Testing
+### Testes
 
-- Live API smoke tests remain environment- and service-dependent; they are not guaranteed to pass on every run.
+- Os testes smoke/sondas smoke da API em produção continuam dependentes do ambiente e do serviço; não há garantia de que passarão em todas as execuções.

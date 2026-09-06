@@ -1,4 +1,4 @@
-# Endpoint Coverage
+# Cobertura de endpoints
 
 | API | GET oficiais | Públicos úteis | Implementados | Cobertura |
 | --- | ---: | ---: | ---: | ---: |
@@ -8,9 +8,9 @@
 
 ## Endpoints
 
-- `AUTH` GET /alice/avisos-restritos | Excluded: authentication_required
-- `AUTH` GET /alice/compras | Excluded: authentication_required
-- `AUTH` GET /alice/tickets | Excluded: authentication_required
+- `AUTH` GET /alice/avisos-restritos | Excluído: authentication_required
+- `AUTH` GET /alice/compras | Excluído: authentication_required
+- `AUTH` GET /alice/tickets | Excluído: authentication_required
 - `OK` GET /modulo-arp/1.1_consultarARP_Id
 - `OK` GET /modulo-arp/1.2_consultarARP_FimVigencia
 - `OK` GET /modulo-arp/1_consultarARP
@@ -80,7 +80,7 @@
 - `OK` GET /modulo-uasg/1_consultarUasg
 - `OK` GET /modulo-uasg/2.1_consultarOrgao_CSV
 - `OK` GET /modulo-uasg/2_consultarOrgao
-- `AUTH` GET /usuarios/consultar | Excluded: authentication_required
+- `AUTH` GET /usuarios/consultar | Excluído: authentication_required
 - `OK` GET /v1/amparos-legais
 - `OK` GET /v1/amparos-legais/{id}
 - `OK` GET /v1/catalogos
@@ -107,14 +107,14 @@
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos
-- `AUTH` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `AUTH` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/excluidos/{sequencialDocumento} | Excluído: authentication_required
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/arquivos/{sequencialDocumento}
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/contratos
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas
 - `OK` GET /v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas/{sequencialAta}/partesenvolvidas/{cnpjOrgao}/{codUnidade}/{tipoParteEnvolvida}
 - `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos
-- `AUTH` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `AUTH` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluído: authentication_required
 - `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos/{sequencialDocumento}
 - `OK` GET /v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/atas/{sequencialAta}/historico
@@ -135,7 +135,7 @@
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencialContrato}/instrumentocobranca/{sequencialInstrumentoCobranca}
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos
-- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/excluidos/{sequencialDocumento} | Excluído: authentication_required
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/arquivos/{sequencialDocumento}
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/empenhos
@@ -146,13 +146,13 @@
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermoContrato}
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos
-- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/excluidos/{sequencialDocumento} | Excluded: authentication_required
+- `AUTH` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/excluidos/{sequencialDocumento} | Excluído: authentication_required
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/contratos/{ano}/{sequencial}/termos/{sequencialTermo}/arquivos/{sequencialDocumento}
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos/quantidade
-- `AUTH` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos/{sequencialDocumento} | Excluded: authentication_required
+- `AUTH` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/arquivos/{sequencialDocumento} | Excluído: authentication_required
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/historico
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/historico/quantidade
 - `OK` GET /v1/orgaos/{cnpj}/irp/{ano}/{sequencial}/itens
@@ -186,6 +186,6 @@
 - `OK` GET /v1/tipos-instrumentos-convocatorios/{id}
 - `OK` GET /v1/tipos-parte-envolvida
 - `OK` GET /v1/tipos-parte-envolvida/{id}
-- `AUTH` GET /v1/usuarios | Excluded: authentication_required
-- `AUTH` GET /v1/usuarios/permissoes | Excluded: authentication_required
-- `AUTH` GET /v1/usuarios/{id} | Excluded: authentication_required
+- `AUTH` GET /v1/usuarios | Excluído: authentication_required
+- `AUTH` GET /v1/usuarios/permissoes | Excluído: authentication_required
+- `AUTH` GET /v1/usuarios/{id} | Excluído: authentication_required

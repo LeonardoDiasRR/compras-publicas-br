@@ -12,7 +12,7 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) somente leit
 - [PNCP - OpenAPI](https://pncp.gov.br/pncp-api/v3/api-docs)
 - [PNCP - Manual de integração](https://pncp.gov.br/manual/pt-br/latest/)
 
-As especificações OpenAPI oficiais são a fonte do catálogo e da verificação de cobertura. Implementações de terceiros, wrappers, scrapers e blogs não são contratos primários.
+As especificações OpenAPI oficiais são a fonte do catálogo e da verificação de cobertura. Implementações de terceiros, adaptadores, extratores e blogs não são contratos primários.
 
 ## Instalação como plugin
 
@@ -91,7 +91,7 @@ Somente as variáveis abaixo são suportadas atualmente e alteram o comportament
 | --- | --- | --- |
 | `MCP_TRANSPORT` | `stdio` | Transporte padrão (`stdio` ou `http`); `--transport` tem precedência |
 | `LOG_LEVEL` | `INFO` | Nível dos logs JSON |
-| `HTTP_TIMEOUT` | `30` | Timeout das consultas HTTP, em segundos |
+| `HTTP_TIMEOUT` | `30` | Tempo limite das consultas HTTP, em segundos |
 | `HTTP_MAX_RETRIES` | `3` | Número máximo de tentativas para falhas transitórias |
 | `HTTP_REQUESTS_PER_SECOND` | `5` | Limite de requisições por segundo por provedor |
 | `COMPRAS_MAX_CONCURRENCY` | `4` | Concorrência máxima para Compras.gov.br |
@@ -101,13 +101,13 @@ Somente as variáveis abaixo são suportadas atualmente e alteram o comportament
 | `CACHE_CATALOG_TTL` | `3600` | TTL de CATMAT/CATSER, em segundos |
 | `CACHE_RECENT_TTL` | `300` | TTL de consultas recentes, em segundos |
 | `CACHE_HISTORICAL_TTL` | `86400` | TTL de consultas históricas, em segundos |
-| `MAX_DOCUMENT_BYTES` | `25000000` | Limite de segurança para todo corpo de resposta upstream, em bytes |
+| `MAX_DOCUMENT_BYTES` | `25000000` | Limite de segurança para todo corpo de resposta da origem, em bytes |
 
-`COMPRAS_BASE_URL` e `PNCP_BASE_URL` não são overrides suportados: os adapters usam as origens fixas `https://dadosabertos.compras.gov.br` e `https://pncp.gov.br/api/pncp`, ambas dentro da allowlist HTTPS do cliente. Uma futura substituição de origem só deve ser documentada depois que o código implementar um override seguro, com validação explícita contra a allowlist.
+`COMPRAS_BASE_URL` e `PNCP_BASE_URL` não são substituições suportadas: os adaptadores usam as origens fixas `https://dadosabertos.compras.gov.br` e `https://pncp.gov.br/api/pncp`, ambas dentro da lista de permissões HTTPS do cliente. Uma futura substituição de origem só deve ser documentada depois que o código implementar uma substituição segura, com validação explícita contra a lista de permissões.
 
 O argumento `--transport` do módulo é a forma explícita de escolher o transporte na inicialização e prevalece sobre `MCP_TRANSPORT`. Não coloque credenciais ou tokens no repositório.
 
-`MAX_DOCUMENT_BYTES` limita o corpo de toda resposta upstream antes que ele seja completamente lido, inclusive respostas JSON, texto, CSV e binárias. Para endpoints identificados como documentos, arquivos, imagens ou conteúdo limitado, exceder o limite retorna o sentinel:
+`MAX_DOCUMENT_BYTES` limita o corpo de toda resposta da origem antes que ele seja completamente lido, inclusive respostas JSON, texto, CSV e binárias. Para endpoints identificados como documentos, arquivos, imagens ou conteúdo limitado, exceder o limite retorna o marcador:
 
 ```json
 {
@@ -117,30 +117,30 @@ O argumento `--transport` do módulo é a forma explícita de escolher o transpo
 }
 ```
 
-Para os demais endpoints, exceder o limite retorna o erro upstream `DOCUMENT_TOO_LARGE`, em vez de fabricar uma resposta vazia.
+Para os demais endpoints, exceder o limite retorna o erro da origem `DOCUMENT_TOO_LARGE`, em vez de fabricar uma resposta vazia.
 
 ## Verificação
 
-Execute os testes locais, excluindo as sondas opt-in de produção:
+Execute os testes locais, excluindo as sondas de produção, que exigem ativação explícita:
 
 ```bash
 uv run pytest -m "not live" -q
 ```
 
-Execute o gate de cobertura do manifesto:
+Execute a verificação de cobertura do manifesto:
 
 ```bash
 uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
 ```
 
-Verifique lint e tipos:
+Verifique a análise estática (lint) e os tipos:
 
 ```bash
 uv run ruff check .
 uv run pyright
 ```
 
-As sondas contra as fontes oficiais são opt-in:
+As sondas contra as fontes oficiais exigem ativação explícita:
 
 ```bash
 RUN_LIVE_TESTS=1 uv run pytest -m live -q
@@ -163,7 +163,7 @@ O manifesto [`coverage/endpoints.yaml`](coverage/endpoints.yaml) registra cada o
 | PNCP | 108 | 100 | 100 | 100% |
 | **Total** | **181** | **169** | **169** | **100%** |
 
-Os 12 GETs restantes estão classificados como autenticados e, portanto, fora da cobertura pública. O gate também exige zero endpoint público útil sem mapeamento:
+Os 12 GETs restantes estão classificados como autenticados e, portanto, fora da cobertura pública. A verificação também exige zero endpoint público útil sem mapeamento:
 
 ```text
 Compras.gov.br: 100.0%
@@ -172,18 +172,18 @@ overall=1.0
 Unmapped public useful GET endpoints: 0
 ```
 
-Uma alteração no contrato oficial que introduza um GET público útil sem classificação e implementação deve falhar no gate de cobertura.
+Uma alteração no contrato oficial que introduza um GET público útil sem classificação e implementação deve falhar na verificação de cobertura.
 
 ## Limites de segurança
 
-- Read-only aplica-se às requisições para as APIs upstream: somente `GET` é usado.
-- O transporte Streamable HTTP pode receber `POST` do protocolo MCP; isso transporta mensagens MCP e não altera dados nas APIs upstream.
-- Não existem operações upstream `POST`, `PUT`, `PATCH` ou `DELETE` no cliente HTTP.
-- As origens upstream são fixas e usam HTTPS: `dadosabertos.compras.gov.br` e `pncp.gov.br`.
+- Somente leitura aplica-se às requisições para as APIs de origem: somente `GET` é usado.
+- O transporte Streamable HTTP pode receber `POST` do protocolo MCP; isso transporta mensagens MCP e não altera dados nas APIs de origem.
+- Não existem operações de origem `POST`, `PUT`, `PATCH` ou `DELETE` no cliente HTTP.
+- As origens são fixas e usam HTTPS: `dadosabertos.compras.gov.br` e `pncp.gov.br`.
 - As ferramentas aceitam apenas caminhos relativos catalogados; uma URL absoluta ou caminho inseguro é rejeitado.
 - Nenhuma ferramenta aceita uma URL arbitrária fornecida pelo usuário.
-- Todo corpo de resposta upstream respeita `MAX_DOCUMENT_BYTES`; conteúdo documental excedente usa o sentinel `file_size_limit` quando aplicável.
-- Falhas do upstream não são convertidas silenciosamente em listas vazias.
+- Todo corpo de resposta da origem respeita `MAX_DOCUMENT_BYTES`; conteúdo documental excedente usa o marcador `file_size_limit` quando aplicável.
+- Falhas da origem não são convertidas silenciosamente em listas vazias.
 
 Consulte [`SECURITY.md`](SECURITY.md) para a política detalhada.
 

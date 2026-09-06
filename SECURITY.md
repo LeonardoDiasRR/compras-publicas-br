@@ -1,148 +1,161 @@
-# Security Policy
+# Política de Segurança
 
-This project provides a read-only MCP server for public Brazilian procurement
-APIs. This document describes security guarantees in the code and controls
-required when the server is deployed remotely.
+Este projeto fornece um servidor MCP somente para leitura para APIs públicas de
+compras governamentais brasileiras. Este documento descreve as garantias de
+segurança no código e os controles necessários quando o servidor é implantado
+remotamente.
 
-## Read-Only Guarantee
+## Garantia de Somente Leitura
 
-- Upstream adapters can issue only `GET` requests. They do not expose
-  `POST`, `PUT`, `PATCH`, or `DELETE` methods.
-- The query service rejects catalog operations whose method is not `GET`.
-- The CI pipeline scans the HTTP client and provider adapters for mutation
-  methods.
-- MCP tools query and return data; they do not create, update, or delete
-  upstream records.
+- Os adaptadores upstream podem emitir apenas requisições `GET`. Eles não
+  expõem os métodos `POST`, `PUT`, `PATCH` ou `DELETE`.
+- O serviço de consulta rejeita operações do catálogo cujo método não seja
+  `GET`.
+- O pipeline de CI verifica o cliente HTTP e os adaptadores de provedores em
+  busca de métodos de mutação.
+- As ferramentas MCP consultam e retornam dados; elas não criam, atualizam ou
+  excluem registros upstream.
 
-## Upstream Network Boundary
+## Limite de Rede Upstream
 
-The upstream origin is fixed and must use HTTPS on the standard port. The
-production allowlist is:
+A origem upstream é fixa e deve usar HTTPS na porta padrão. A allowlist de
+produção é:
 
 - `https://dadosabertos.compras.gov.br`
-- `https://pncp.gov.br` (including the configured `/api/pncp` base path)
+- `https://pncp.gov.br` (incluindo o path base `/api/pncp` configurado)
 
-The HTTP client rejects credentials embedded in a base URL, unsupported ports,
-query strings, and fragments. Tools cannot receive an arbitrary URL, so user
-input cannot select a different upstream origin.
+O cliente HTTP rejeita credenciais incorporadas em uma URL base, portas não
+suportadas, strings de consulta e fragmentos. As ferramentas não podem receber
+uma URL arbitrária, portanto a entrada do usuário não pode selecionar uma
+origem upstream diferente.
 
-## Path and Traversal Protection
+## Proteção de Caminhos e Travessia
 
-Only origin-relative paths are accepted. The client rejects:
+Apenas paths relativos à origem são aceitos. O cliente rejeita:
 
-- absolute URLs and protocol-relative URLs;
-- schemes, hosts, query strings, or fragments in the path argument;
-- backslashes;
-- `..` path segments, including percent-encoded or repeatedly encoded forms.
+- URLs absolutas e URLs relativas ao protocolo;
+- esquemas, hosts, strings de consulta ou fragmentos no argumento de path;
+- barras invertidas;
+- segmentos de path `..`, incluindo formas codificadas em porcentagem ou
+  codificadas repetidamente.
 
-Path parameters are validated against the endpoint catalog and URL-encoded
-before they are rendered. Query parameters are likewise limited to parameters
-declared by the catalog and validated against their declared schemas.
+Os parâmetros de path são validados em relação ao catálogo de endpoints e
+codificados em URL antes de serem renderizados. Os parâmetros de consulta
+também são limitados aos parâmetros declarados pelo catálogo e validados em
+relação aos seus esquemas declarados.
 
-## Plugin Installer Controls
+## Controles do Instalador de Plugins
 
-The plugin installer accepts only a supported agent adapter and the `project` or
-`user` scope. Project targets stay below the detected project root, and user
-targets stay below the user home directory; arbitrary destination paths are not
-accepted.
+O instalador de plugins aceita apenas um adaptador de agente compatível e o
+escopo `project` ou `user`. Os destinos do projeto permanecem abaixo da raiz do
+projeto detectada, e os destinos do usuário permanecem abaixo do diretório
+home do usuário; paths de destino arbitrários não são aceitos.
 
-The installer rejects traversal segments and any resolved target outside the
-selected scope. It merges only the `compras-publicas-br` entry, preserves other
-configuration, and never overwrites an unrecognized entry or an unmanaged
-skill. Configuration and skill changes are written atomically.
+O instalador rejeita segmentos de travessia e qualquer destino resolvido fora do
+escopo selecionado. Ele mescla apenas a entrada `compras-publicas-br`, preserva
+as demais configurações e nunca sobrescreve uma entrada não reconhecida ou uma
+skill não gerenciada. As alterações de configuração e de skills são gravadas
+atomicamente.
 
-Generic `.agent` configuration entries carry the exact package and schema
-metadata marker `managedBy: {package: mcp-compras-publicas-br, schemaVersion: 1}`.
-Native adapters recognize ownership only through their documented exact native
-entry shape and pinned command. They do not add or accept `managedBy` or any
-other unknown field in non-generic formats. This includes Hermes Agent, whose
-fixed compatibility target is `.hermes/config.json5`; its native entry must
-match the documented JSON5 shape and the exact stable
-`mcp-compras-publicas-br==<version>` pin. Managed skills must carry the
-`managed-by: mcp-compras-publicas-br; format: 1` marker. Install, update, and
-uninstall act on existing data only when the applicable marker or native
-signature and the expected entry shape confirm ownership.
+As entradas de configuração genéricas `.agent` carregam o marcador exato de
+metadados de pacote e esquema `managedBy: {package: mcp-compras-publicas-br, schemaVersion: 1}`.
+Os adaptadores nativos reconhecem a propriedade somente por meio do formato
+nativo exato documentado para a entrada e do comando fixado. Eles não adicionam
+nem aceitam `managedBy` ou qualquer outro campo desconhecido em formatos não
+genéricos. Isso inclui o Hermes Agent, cujo destino fixo de compatibilidade é
+`.hermes/config.json5`; sua entrada nativa deve corresponder ao formato JSON5
+documentado e ao pin estável exato
+`mcp-compras-publicas-br==<version>`. As skills gerenciadas devem carregar o
+marcador `managed-by: mcp-compras-publicas-br; format: 1`. As operações de
+instalação, atualização e desinstalação atuam sobre dados existentes somente
+quando o marcador ou a assinatura nativa aplicável e o formato esperado da
+entrada confirmam a propriedade.
 
-Configuration is treated as data. The installer never executes commands,
-arguments, hooks, or other values read from an existing configuration; it emits
-only the fixed `uvx` command for this package. The emitted command always pins
-an exact stable package version as
+Configuração é tratada como dado. O instalador nunca executa comandos,
+argumentos, hooks ou outros valores lidos de uma configuração existente; ele
+emite apenas o comando `uvx` fixo para este pacote. O comando emitido sempre
+fixa uma versão estável exata do pacote como
 `mcp-compras-publicas-br==<version>`.
 
-Installer output and logs must not contain configuration contents, credentials,
-tokens, or other secrets. Paths and warnings must be limited to the operational
-information needed to report the result.
+A saída e os logs do instalador não devem conter conteúdo de configuração,
+credenciais, tokens ou outros segredos. Paths e avisos devem ser limitados às
+informações operacionais necessárias para relatar o resultado.
 
-## Credentials and Secrets
+## Credenciais e Segredos
 
-The supported upstream APIs are public and the application does not require
-upstream credentials. Do not commit, embed, or transmit API keys, passwords,
-cookies, bearer tokens, private keys, or other secrets. Endpoints that require
-authentication are not treated as public usable operations.
+As APIs upstream compatíveis são públicas e a aplicação não exige credenciais
+upstream. Não faça commit, incorpore nem transmita chaves de API, senhas,
+cookies, tokens bearer, chaves privadas ou outros segredos. Endpoints que exigem
+autenticação não são tratados como operações públicas utilizáveis.
 
-Environment and deployment secrets, if a future integration requires them,
-must be supplied through the deployment secret manager and must never be
-placed in source code, manifests, URLs, logs, or test fixtures.
+Segredos de ambiente e de implantação, caso uma integração futura exija esses
+segredos, devem ser fornecidos pelo gerenciador de segredos da implantação e
+nunca devem ser colocados no código-fonte, manifestos, URLs, logs ou fixtures de
+teste.
 
-## Remote MCP Controls
+## Controles do MCP Remoto
 
-STDIO is the default transport for local use. A Streamable HTTP deployment is
-not safe to expose publicly unless the deployment provides all of the
-following:
+STDIO é o transporte padrão para uso local. Uma implantação Streamable HTTP não
+é segura para exposição pública, a menos que a implantação forneça todos os
+seguintes itens:
 
-- TLS, with certificate validation and HTTP redirected or disabled;
-- authentication and authorization at the MCP server or its trusted edge;
-- rate limiting for clients and upstream requests;
-- request and response payload limits, including the configured 25 MB maximum
-  document size;
-- bounded concurrency per client and per upstream provider;
-- a restrictive CORS policy containing only explicitly required origins,
-  methods, and headers, or CORS disabled when it is not needed.
+- TLS, com validação de certificado e HTTP redirecionado ou desabilitado;
+- autenticação e autorização no servidor MCP ou em sua borda confiável;
+- limitação de taxa para clientes e requisições upstream;
+- limites de payload de requisição e resposta, incluindo o tamanho máximo de
+  documento configurado de 25 MB;
+- concorrência limitada por cliente e por provedor upstream;
+- uma política CORS restritiva contendo apenas origens, métodos e cabeçalhos
+  explicitamente necessários, ou CORS desabilitado quando não for necessário.
 
-An HTTP MCP endpoint bound only to localhost is a local transport choice, not a
-write path: it remains subject to the upstream `GET`-only boundary. It does not
-need the public remote controls above unless it is exposed beyond the local
-machine.
+Um endpoint HTTP MCP vinculado apenas a localhost é uma escolha de transporte
+local, não um path de escrita: ele continua sujeito ao limite upstream de
+somente `GET`. Ele não precisa dos controles remotos públicos acima, a menos
+que seja exposto além da máquina local.
 
-These controls belong to the remote deployment boundary. The upstream APIs
-being public does not make an unauthenticated remote MCP server safe.
+Esses controles pertencem ao limite da implantação remota. O fato de as APIs
+upstream serem públicas não torna seguro um servidor MCP remoto não autenticado.
 
-## Sensitive Data and Logging
+## Dados Sensíveis e Registros
 
-Application and deployment logs must be structured and limited to an
-allowlisted set of operational metadata such as request identifier, provider,
-tool, endpoint identifier, duration, status, retry count, and cache outcome.
-Redaction or hashing must happen before values are serialized to logs, and
-log retention and access must be limited to what operations require.
+Os logs da aplicação e da implantação devem ser estruturados e limitados a um
+conjunto allowlisted de metadados operacionais, como identificador da
+requisição, provedor, ferramenta, identificador do endpoint, duração, status,
+quantidade de tentativas e resultado do cache. A redação ou o hashing devem
+ocorrer antes de os valores serem serializados nos logs, e a retenção e o acesso
+aos logs devem ser limitados ao necessário para as operações.
 
-Never log full request or response bodies, authorization headers, cookies,
-tokens, credentials, private keys, or unredacted user-supplied parameters.
-Redact or hash identifiers when they could contain personal or otherwise
-sensitive information. Upstream error bodies are untrusted response content
-and must never be logged wholesale; log only a bounded, redacted summary or
-safe metadata such as status and a body hash. Error messages and traces must
-follow the same rule and must not preserve full upstream bodies.
+Nunca registre corpos completos de requisições ou respostas, cabeçalhos de
+autorização, cookies, tokens, credenciais, chaves privadas ou parâmetros
+fornecidos pelo usuário sem redação. Faça a redação ou o hashing de
+identificadores quando eles puderem conter informações pessoais ou de outra
+forma sensíveis. Os corpos de erro upstream são conteúdo de resposta não
+confiável e nunca devem ser registrados integralmente; registre apenas um
+resumo limitado e com redação ou metadados seguros, como status e um hash do
+corpo. Mensagens de erro e traces devem seguir a mesma regra e não devem
+preservar corpos upstream completos.
 
-## Reporting a Vulnerability
+## Comunicação de uma Vulnerabilidade
 
-Report suspected vulnerabilities privately through the repository's GitHub
-Security Advisory form:
+Relate vulnerabilidades suspeitas em privado por meio do formulário de
+Security Advisory do GitHub do repositório:
 
 https://github.com/LeonardoDiasRR/compras-publicas-br/security/advisories/new
 
-If that form is unavailable, use the maintainer's private contact method listed
-on the repository owner's GitHub profile:
+Se esse formulário estiver indisponível, use o método de contato privado do
+maintainer listado no perfil do proprietário do repositório no GitHub:
 
 https://github.com/LeonardoDiasRR
 
-Do not open a public issue or disclose the vulnerability publicly before
-maintainers have had a reasonable opportunity to investigate and coordinate a
-fix.
+Não abra uma issue pública nem divulgue a vulnerabilidade publicamente antes de
+os maintainers terem uma oportunidade razoável de investigar e coordenar uma
+correção.
 
-Include the affected version or commit, a concise impact description, precise
-reproduction steps, and any relevant logs or proof of concept after removing
-secrets and personal data. Reports should not include real credentials or
-production data.
+Inclua a versão ou o commit afetado, uma descrição concisa do impacto, etapas
+precisas de reprodução e quaisquer logs relevantes ou prova de conceito após
+remover segredos e dados pessoais. Os relatos não devem incluir credenciais
+reais ou dados de produção.
 
-Maintainers will acknowledge valid private reports, assess their impact, and
-coordinate disclosure timing with the reporter when applicable.
+Os maintainers confirmarão o recebimento de relatos privados válidos, avaliarão
+seu impacto e coordenarão o momento da divulgação com o relator quando
+aplicável.

@@ -1257,7 +1257,7 @@ def _render_tools(path: Path, output: Path | None) -> int:
 
 def _tools_markdown(manifest: dict[str, Any]) -> str:
     endpoints = _manifest_endpoints(manifest)
-    lines = ["# Tools", "", "Tools atômicas geradas a partir do manifesto.", ""]
+    lines = ["# Ferramentas", "", "Ferramentas atômicas geradas a partir do manifesto.", ""]
     for endpoint in endpoints:
         if (
             endpoint.get("classification") != "PUBLIC_USEFUL"
@@ -1269,18 +1269,18 @@ def _tools_markdown(manifest: dict[str, Any]) -> str:
             [
                 f"## `{endpoint['tool']}`",
                 "",
-                f"- Provider: `{endpoint['provider']}`",
+                f"- Provedor: `{endpoint['provider']}`",
                 f"- Endpoint: `{endpoint['method']} {endpoint['path']}`",
-                f"- Description: {description}",
+                f"- Descrição: {description}",
                 "",
-                "### Parameters",
+                "### Parâmetros",
             ]
         )
         for parameter in endpoint.get("parameters", []):
             parameter = cast(dict[str, Any], parameter)
             name = parameter.get("name", "")
             location = parameter.get("in", "")
-            required = "required" if parameter.get("required", False) else "optional"
+            required = "obrigatório" if parameter.get("required", False) else "opcional"
             schema = json.dumps(
                 parameter.get("schema", {}),
                 ensure_ascii=False,
@@ -1290,7 +1290,7 @@ def _tools_markdown(manifest: dict[str, Any]) -> str:
             parameter_description = " ".join(str(parameter.get("description", "")).split())
             lines.append(
                 f"- `{name}` (`{location}`, {required}): schema: {schema}; "
-                f"description: {parameter_description}"
+                f"descrição: {parameter_description}"
             )
         lines.extend(
             [
@@ -1299,7 +1299,7 @@ def _tools_markdown(manifest: dict[str, Any]) -> str:
         )
     lines.extend(
         [
-            "## Tools semânticas e diagnóstico",
+            "## Ferramentas semânticas e diagnóstico",
             "",
             "Ferramentas compostas e de diagnóstico que realizam somente consultas de leitura "
             "nas fontes oficiais.",
@@ -1323,7 +1323,7 @@ def _tools_markdown(manifest: dict[str, Any]) -> str:
 def _coverage_markdown(manifest: dict[str, Any]) -> str:
     endpoints = _manifest_endpoints(manifest)
     lines = [
-        "# Endpoint Coverage",
+        "# Cobertura de endpoints",
         "",
         "| API | GET oficiais | Públicos úteis | Implementados | Cobertura |",
         "| --- | ---: | ---: | ---: | ---: |",
@@ -1351,7 +1351,7 @@ def _coverage_markdown(manifest: dict[str, Any]) -> str:
         if endpoint.get("classification") == "AUTHENTICATED":
             lines.append(
                 f"- `AUTH` {endpoint.get('method')} {endpoint.get('path')}"
-                " | Excluded: authentication_required"
+                " | Excluído: authentication_required"
             )
             continue
         marker = "OK" if endpoint.get("implemented") else "PENDING"
@@ -1377,7 +1377,7 @@ def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], lis
     blocks = re.split(r"(?m)^##\s+", document)
     for index, block in enumerate(blocks[1:], start=1):
         lines = block.splitlines()
-        if lines and lines[0] == "Tools semânticas e diagnóstico":
+        if lines and lines[0] == "Ferramentas semânticas e diagnóstico":
             if semantic_section_seen:
                 errors.append("duplicate semantic tools section")
             semantic_section_seen = True
@@ -1433,19 +1433,19 @@ def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], lis
         if name in parsed:
             errors.append(f"duplicate tool block: {name}")
         provider_match = (
-            re.fullmatch(r"- Provider: `([^`]+)`", lines[2]) if len(lines) > 2 else None
+            re.fullmatch(r"- Provedor: `([^`]+)`", lines[2]) if len(lines) > 2 else None
         )
         endpoint_match = (
             re.fullmatch(r"- Endpoint: `(GET) (.+)`", lines[3]) if len(lines) > 3 else None
         )
         description_match = (
-            re.fullmatch(r"- Description: (.*)", lines[4]) if len(lines) > 4 else None
+            re.fullmatch(r"- Descrição: (.*)", lines[4]) if len(lines) > 4 else None
         )
         if not provider_match or not endpoint_match or not description_match:
             errors.append(f"malformed metadata for tool: {name}")
             continue
         parameters: list[dict[str, Any]] = []
-        if len(lines) < 6 or lines[6] != "### Parameters":
+        if len(lines) < 6 or lines[6] != "### Parâmetros":
             errors.append(f"missing parameter section for tool: {name}")
             continue
         parameter_names: set[tuple[str, str]] = set()
@@ -1453,8 +1453,8 @@ def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], lis
             if not line:
                 continue
             parameter_match = re.fullmatch(
-                r"- `([^`]+)` \(`([^`]+)`, (required|optional)\): "
-                r"schema: (.+); description: (.*)",
+                r"- `([^`]+)` \(`([^`]+)`, (obrigatório|opcional)\): "
+                r"schema: (.+); descrição: (.*)",
                 line,
             )
             if parameter_match is None:
@@ -1476,7 +1476,7 @@ def _parse_tools_document(document: str) -> tuple[dict[str, dict[str, Any]], lis
                 {
                     "name": parameter_match.group(1),
                     "in": parameter_match.group(2),
-                    "required": parameter_match.group(3) == "required",
+                    "required": parameter_match.group(3) == "obrigatório",
                     "schema": schema,
                     "description": parameter_match.group(5),
                 }

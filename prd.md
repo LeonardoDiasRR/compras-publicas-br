@@ -3,8 +3,8 @@
 ## Especificação Técnica e Funcional
 
 **Versão:** 1.0
-**Status:** Especificação inicial
-**Natureza:** MCP Server somente leitura
+**Situação:** Especificação inicial
+**Natureza:** Servidor MCP somente leitura
 **Fontes primárias:** Compras.gov.br e PNCP
 **Objetivo de cobertura:** 100% dos endpoints GET públicos e úteis
 
@@ -25,7 +25,7 @@ O MCP deverá fornecer **100% de cobertura dos endpoints HTTP GET que sejam simu
 * relacionados a dados públicos de compras ou às tabelas de domínio necessárias à interpretação desses dados;
 * tecnicamente utilizáveis em produção.
 
-O servidor será **estritamente read-only**.
+O servidor será **estritamente somente leitura**.
 
 Nenhuma operação POST, PUT, PATCH ou DELETE deverá existir no MCP.
 
@@ -33,9 +33,9 @@ Nenhuma operação POST, PUT, PATCH ou DELETE deverá existir no MCP.
 
 # 2. Princípio fundamental de cobertura
 
-A cobertura não deverá ser definida pelo número de tools criadas manualmente.
+A cobertura não deverá ser definida pelo número de ferramentas criadas manualmente.
 
-Deverá existir um **catálogo canônico de endpoints upstream**.
+Deverá existir um **catálogo canônico de endpoints da API de origem**.
 
 Para cada endpoint oficial deverá ser possível determinar:
 
@@ -82,7 +82,7 @@ até que o endpoint seja implementado ou explicitamente classificado como não p
 Um endpoint é público quando:
 
 * pode ser utilizado sem conta institucional;
-* não exige bearer token privado;
+* não exige token de portador privado;
 * não exige certificado de cliente;
 * não exige credenciamento como plataforma integradora;
 * não depende de autorização administrativa específica.
@@ -166,17 +166,17 @@ Também deverão ser consideradas as APIs especificamente disponibilizadas pelo 
 Não utilizar como fonte definitiva:
 
 * implementações GitHub de terceiros;
-* wrappers Python;
+* camadas de encapsulamento em Python;
 * bibliotecas npm;
 * projetos MCP existentes;
-* scrapers;
+* raspadores;
 * documentação não oficial;
 * exemplos encontrados em blogs;
 * código de outros projetos.
 
 Eles poderão eventualmente ser usados apenas como material auxiliar de diagnóstico.
 
-O contrato será sempre determinado pela documentação oficial upstream.
+O contrato será sempre determinado pela documentação oficial da API de origem.
 
 ---
 
@@ -197,7 +197,7 @@ Cobrir integralmente consultas relacionadas a:
 * itens de material;
 * características;
 * unidades de fornecimento;
-* status;
+* situação;
 * relacionamentos disponíveis.
 
 O manual oficial, por exemplo, documenta consultas do módulo Material através de endpoints GET específicos.
@@ -536,7 +536,7 @@ src/
 
 # 15. Regra de arquitetura crítica
 
-Uma tool MCP **não deve executar HTTP diretamente**.
+Uma ferramenta MCP **não deve executar HTTP diretamente**.
 
 Fluxo obrigatório:
 
@@ -558,7 +558,7 @@ Isso permitirá:
 * troca de endpoint;
 * tratamento consistente de erros;
 * composição entre APIs;
-* retry controlado;
+* novas tentativas controladas;
 * observabilidade;
 * cobertura automatizada.
 
@@ -578,8 +578,8 @@ Os clientes serão responsáveis exclusivamente por:
 * URL;
 * conexão;
 * timeout;
-* query parameters;
-* headers;
+* parâmetros de consulta;
+* cabeçalhos;
 * paginação de baixo nível;
 * tratamento de HTTP;
 * desserialização inicial.
@@ -588,7 +588,7 @@ Não deverão conter lógica MCP.
 
 ---
 
-# 17. Política read-only
+# 17. Política de somente leitura
 
 O servidor deverá rejeitar arquiteturalmente qualquer método diferente de GET.
 
@@ -607,7 +607,7 @@ patch()
 delete()
 ```
 
-para os adapters das APIs.
+para os adaptadores das APIs.
 
 Deve existir teste automatizado garantindo:
 
@@ -622,9 +622,9 @@ DELETE = impossível
 
 # 18. Proteção adicional contra SSRF
 
-As URLs upstream deverão ser fixas.
+As URLs das APIs de origem deverão ser fixas.
 
-Allowlist:
+Lista de permissões:
 
 ```text
 https://dadosabertos.compras.gov.br
@@ -639,17 +639,17 @@ https://treina.pncp.gov.br
 
 somente no perfil de testes.
 
-Nenhuma tool poderá receber uma URL arbitrária do usuário.
+Nenhuma ferramenta poderá receber uma URL arbitrária do usuário.
 
 ---
 
-# 19. Estratégia de Tools MCP
+# 19. Estratégia de ferramentas MCP
 
-Existirão dois tipos de tools.
+Existirão dois tipos de ferramentas.
 
-## Tipo A — tools atômicas
+## Tipo A — ferramentas atômicas
 
-Representam uma operação de consulta upstream.
+Representam uma operação de consulta na API de origem.
 
 Exemplo conceitual:
 
@@ -661,7 +661,7 @@ pncp_list_atas_contratacao
 pncp_list_empenhos_contrato
 ```
 
-## Tipo B — tools semânticas
+## Tipo B — ferramentas semânticas
 
 Combinam várias consultas sem alterar dados.
 
@@ -675,9 +675,9 @@ comparar_precos_material
 historico_completo_contratacao
 ```
 
-Tools compostas são adicionais.
+As ferramentas compostas são adicionais.
 
-Elas **não substituem** as tools necessárias para garantir cobertura dos endpoints.
+Elas **não substituem** as ferramentas necessárias para garantir a cobertura dos endpoints.
 
 ---
 
@@ -712,7 +712,7 @@ status: excluded
 
 ---
 
-# 21. Coverage Manifest
+# 21. Manifesto de cobertura
 
 O repositório deverá conter arquivo gerado automaticamente:
 
@@ -763,11 +763,11 @@ python -m coverage.discover
 Ele deverá:
 
 1. recuperar o OpenAPI oficial;
-2. enumerar todos os paths;
+2. enumerar todos os caminhos;
 3. filtrar operações GET;
-4. registrar security schemes;
-5. comparar com snapshot anterior;
-6. gerar um novo manifest.
+4. registrar esquemas de segurança;
+5. comparar com o instantâneo anterior;
+6. gerar um novo manifesto.
 
 Resultado:
 
@@ -822,7 +822,7 @@ Exclusão somente mediante justificativa explícita.
 Exemplos aceitáveis:
 
 ```text
-health check
+verificação de saúde
 swagger config
 actuator
 endpoint interno de framework
@@ -879,7 +879,7 @@ Valores ilustrativos.
 
 ---
 
-# 27. Detecção de mudanças upstream
+# 27. Detecção de mudanças na API de origem
 
 Executar automaticamente, por exemplo, diariamente ou semanalmente:
 
@@ -908,7 +908,7 @@ Mudanças deverão abrir issue automática ou falhar no CI.
 
 ---
 
-# 28. Namespaces das Tools
+# 28. Espaços de nomes das ferramentas
 
 Usar nomenclatura previsível.
 
@@ -943,7 +943,7 @@ pncp_listar_empenhos_contrato
 
 # 29. Idioma
 
-Os nomes das tools deverão ser em português.
+Os nomes das ferramentas deverão ser em português.
 
 Motivos:
 
@@ -966,9 +966,9 @@ codigo_servico
 
 ---
 
-# 30. Descrição das tools
+# 30. Descrição das ferramentas
 
-Toda tool deverá ter descrição suficientemente detalhada para seleção correta pelo LLM.
+Toda ferramenta deverá ter descrição suficientemente detalhada para seleção correta pelo LLM.
 
 Ruim:
 
@@ -986,7 +986,7 @@ quando os identificadores PNCP da contratação já forem conhecidos.
 
 ---
 
-# 31. Schemas de entrada
+# 31. Esquemas de entrada
 
 Todos os argumentos deverão possuir:
 
@@ -1029,13 +1029,13 @@ Internamente utilizar ISO 8601:
 YYYY-MM-DD
 ```
 
-Se o upstream exigir:
+Se a API de origem exigir:
 
 ```text
 YYYYMMDD
 ```
 
-a conversão deverá ocorrer dentro do adapter.
+a conversão deverá ocorrer dentro do adaptador.
 
 O modelo não deve precisar conhecer peculiaridades de formato da API.
 
@@ -1064,7 +1064,7 @@ Exemplo de retorno normalizado:
 }
 ```
 
-Quando a API upstream não fornecer todos esses campos, utilizar apenas os disponíveis.
+Quando a API de origem não fornecer todos esses campos, utilizar apenas os disponíveis.
 
 Nunca fabricar números.
 
@@ -1072,7 +1072,7 @@ Nunca fabricar números.
 
 # 34. Paginação automática
 
-Tools de listagem deverão oferecer:
+As ferramentas de listagem deverão oferecer:
 
 ```text
 pagina
@@ -1180,7 +1180,7 @@ Documentos acima do limite poderão retornar:
 
 ---
 
-# 39. Caching
+# 39. Armazenamento em cache
 
 Cache recomendado para consultas públicas.
 
@@ -1218,7 +1218,7 @@ O cache deve poder ser desabilitado.
 
 ---
 
-# 40. Cache key
+# 40. Chave de cache
 
 Incluir:
 
@@ -1244,13 +1244,13 @@ sha256(
 Implementar:
 
 * timeout;
-* connection pooling;
-* retry limitado;
-* backoff exponencial;
-* jitter;
-* circuit breaker opcional.
+* pool de conexões;
+* novas tentativas limitadas;
+* recuo exponencial;
+* variação aleatória;
+* disjuntor opcional.
 
-Retry somente em:
+Repetir somente em:
 
 ```text
 429
@@ -1273,9 +1273,9 @@ Não repetir automaticamente:
 
 ---
 
-# 42. Rate limits
+# 42. Limites de taxa
 
-Mesmo que o upstream não publique limites claros, o MCP deverá proteger as APIs.
+Mesmo que a API de origem não publique limites claros, o MCP deverá proteger as APIs.
 
 Configurações:
 
@@ -1319,7 +1319,7 @@ INTERNAL_ERROR
 
 ---
 
-# 44. Não mascarar erros do upstream
+# 44. Não mascarar erros da API de origem
 
 O MCP poderá explicar o erro, mas não deverá transformar:
 
@@ -1337,9 +1337,9 @@ Retornar lista vazia nesse cenário induziria o LLM a concluir falsamente que n�
 
 ---
 
-# 45. Raw mode
+# 45. Modo bruto
 
-Cada consulta deverá suportar internamente acesso ao payload upstream original para testes.
+Cada consulta deverá suportar internamente acesso à carga útil original da API de origem para testes.
 
 Opcionalmente expor argumento:
 
@@ -1361,7 +1361,7 @@ Isso ajuda quando o usuário precisa de campos recém-adicionados ainda não map
 
 Os modelos deverão tolerar campos adicionais.
 
-Nova propriedade adicionada pelo upstream não poderá quebrar imediatamente a API.
+Nova propriedade adicionada pela API de origem não poderá quebrar imediatamente a API.
 
 Política:
 
@@ -1372,7 +1372,7 @@ unknown fields → preserved
 
 ---
 
-# 47. Tools compostas
+# 47. Ferramentas compostas
 
 Além da cobertura 1:1 dos recursos oficiais, criar ferramentas de maior valor para LLMs.
 
@@ -1504,9 +1504,9 @@ Eles são fundamentais para navegação entre recursos.
 
 ---
 
-# 53. Resources MCP
+# 53. Recursos MCP
 
-Além das tools, expor Resources úteis.
+Além das ferramentas, expor recursos úteis.
 
 Exemplos:
 
@@ -1521,7 +1521,7 @@ pncp://api-version
 
 ---
 
-# 54. Resource de cobertura
+# 54. Recurso de cobertura
 
 Especialmente importante:
 
@@ -1547,7 +1547,7 @@ Retorno:
 
 ---
 
-# 55. Tool de metadados
+# 55. Ferramenta de metadados
 
 Criar:
 
@@ -1559,14 +1559,14 @@ Permite ao agente descobrir:
 
 * fontes;
 * domínios;
-* quantidade de tools;
+* quantidade de ferramentas;
 * endpoints cobertos;
 * versão;
-* data do último snapshot.
+* data do último instantâneo.
 
 ---
 
-# 56. Tool de diagnóstico
+# 56. Ferramenta de diagnóstico
 
 Criar:
 
@@ -1595,17 +1595,17 @@ Cobertura mínima sugerida:
 
 Para:
 
-* adapters;
+* adaptadores;
 * validação;
 * paginação;
 * normalização;
 * erros;
-* registry;
-* coverage checker.
+* registro;
+* verificador de cobertura.
 
 ---
 
-# 58. Contract tests
+# 58. Testes de contrato
 
 Cada endpoint deverá possuir teste baseado no contrato oficial.
 
@@ -1619,11 +1619,11 @@ test_pncp_list_atas_contract
 
 ---
 
-# 59. Smoke tests contra produção
+# 59. Testes de verificação contra produção
 
 Executar um pequeno conjunto de consultas públicas conhecidas.
 
-Nunca depender exclusivamente de mocks.
+Nunca depender exclusivamente de simulações.
 
 Separar:
 
@@ -1635,7 +1635,7 @@ live
 
 ---
 
-# 60. Teste de read-only
+# 60. Teste de somente leitura
 
 Obrigatório no CI.
 
@@ -1648,7 +1648,7 @@ PATCH
 DELETE
 ```
 
-nos adapters e nos métodos HTTP habilitados.
+nos adaptadores e nos métodos HTTP habilitados.
 
 Qualquer ocorrência operacional deve quebrar o pipeline.
 
@@ -1664,9 +1664,9 @@ assert useful_public_get_coverage == 1.0
 
 ---
 
-# 62. Teste de schema drift
+# 62. Teste de deriva de esquema
 
-Executar snapshot contra upstream.
+Executar um instantâneo contra a API de origem.
 
 Se houver mudança:
 
@@ -1728,7 +1728,7 @@ coverage_ratio
 
 ---
 
-# 65. Telemetria de falhas upstream
+# 65. Telemetria de falhas na API de origem
 
 Registrar separadamente:
 
@@ -1788,16 +1788,16 @@ Se usado remotamente:
 
 * TLS;
 * autenticação no próprio MCP;
-* rate limiting;
-* limite de payload;
+* limitação de taxa;
+* limite de carga útil;
 * limite de concorrência;
 * CORS restrito quando aplicável.
 
-Isso não altera o caráter público das APIs upstream.
+Isso não altera o caráter público das APIs de origem.
 
 ---
 
-# 69. Stack sugerida
+# 69. Pilha tecnológica sugerida
 
 Implementação preferencial:
 
@@ -1877,8 +1877,8 @@ docker-compose.yml
 Imagem:
 
 * usuário não-root;
-* filesystem preferencialmente read-only;
-* healthcheck;
+* sistema de arquivos preferencialmente somente leitura;
+* verificação de saúde;
 * sem credenciais embutidas.
 
 ---
@@ -1944,10 +1944,10 @@ Ao detectar novo endpoint:
 Pode-se gerar automaticamente:
 
 * modelos básicos;
-* schemas;
+* esquemas;
 * identificadores;
 * testes;
-* registry.
+* registro.
 
 Mas **não gerar automaticamente descrições MCP diretamente do operationId sem revisão**.
 
@@ -1963,7 +1963,7 @@ O MCP não deverá assumir que:
 API de hoje = API permanente
 ```
 
-Todo contrato upstream será versionado em:
+Todo contrato da API de origem será versionado em:
 
 ```text
 specs/upstream/
@@ -1981,7 +1981,7 @@ specs/upstream/
 
 ---
 
-# 78. Semantic diff
+# 78. Diferença semântica
 
 Não comparar apenas texto JSON.
 
@@ -1990,8 +1990,8 @@ Normalizar:
 * ordem dos parâmetros;
 * `$ref`;
 * descrição;
-* schemas;
-* security;
+* esquemas;
+* segurança;
 * métodos.
 
 Classificar mudança como:
@@ -2027,7 +2027,7 @@ A versão 1.0 somente será considerada concluída quando:
 
 ### Contrato
 
-Todos os endpoints estarão presentes no manifest.
+Todos os endpoints estarão presentes no manifesto.
 
 ### Testes
 
@@ -2039,28 +2039,28 @@ contract test
 tool test
 ```
 
-### Drift
+### Deriva
 
-O projeto terá mecanismo automático para detectar alterações upstream.
+O projeto terá mecanismo automático para detectar alterações na API de origem.
 
 ---
 
-# 80. Definição de Done por endpoint
+# 80. Definição de concluído por endpoint
 
 Um endpoint somente será considerado implementado quando:
 
-* [ ] estiver registrado no manifest;
+* [ ] estiver registrado no manifesto;
 * [ ] classificação pública confirmada;
 * [ ] parâmetros mapeados;
-* [ ] adapter implementado;
+* [ ] adaptador implementado;
 * [ ] tratamento de paginação implementado, se aplicável;
 * [ ] erros tratados;
-* [ ] tool MCP exposta;
+* [ ] ferramenta MCP exposta;
 * [ ] descrição semântica revisada;
-* [ ] schema de entrada validado;
+* [ ] esquema de entrada validado;
 * [ ] teste unitário presente;
-* [ ] contract test presente;
-* [ ] teste live possível;
+* [ ] teste de contrato presente;
+* [ ] teste ao vivo possível;
 * [ ] proveniência presente na resposta;
 * [ ] documentação atualizada.
 
@@ -2080,7 +2080,7 @@ Versão 1.0 não deverá:
 * alterar contratos;
 * enviar empenhos;
 * substituir sistemas oficiais;
-* realizar scraping de páginas HTML quando existir API oficial equivalente.
+* realizar raspagem de páginas HTML quando existir API oficial equivalente.
 
 ---
 
@@ -2092,7 +2092,7 @@ O MCP deverá ser tratado como:
 
 Ele não será apenas uma coleção de ferramentas.
 
-Será uma implementação cuja correspondência com as APIs upstream pode ser matematicamente auditada.
+Será uma implementação cuja correspondência com as APIs de origem pode ser matematicamente auditada.
 
 A propriedade fundamental do projeto será:
 
