@@ -170,9 +170,11 @@ export class ReadOnlyHttpClient {
       let statusCode: number | null = null;
       const limiter = this.getLimiter();
       if (limiter?.semaphore != null) await limiter.semaphore.acquire();
-      const started = Date.now();
+      let started = Date.now();
       try {
         await this.waitForRateLimit(limiter);
+        // parity com http_readonly.py:151: o timer mede apenas o pedido real, não a espera do rate limit
+        started = Date.now();
         // ponytail: redirect:"manual" mirrors httpx not following redirects; allowlisted APIs answer 2xx/4xx directly
         const response = await this.fetchImpl(url.toString(), {
           method: "GET",
@@ -288,7 +290,7 @@ export class ReadOnlyHttpClient {
       if (limiter.nextRequestAt > now) {
         await sleep((limiter.nextRequestAt - now) / 1000);
       }
-      limiter.nextRequestAt = Date.now() + limiter.requestInterval;
+      limiter.nextRequestAt = Date.now() + limiter.requestInterval * 1000;
     } finally {
       release();
     }
