@@ -129,6 +129,7 @@ interface AdapterSpec {
 class Adapter implements AgentAdapter {
   readonly agentId: AgentId;
   readonly displayName: string;
+  // ponytail: validationCommand nunca executado (igual ao python — só metadado)
   readonly validationCommand: readonly string[] | null;
   private readonly spec: AdapterSpec;
   private readonly entryStyle: EntryStyle;
