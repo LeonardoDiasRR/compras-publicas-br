@@ -87,13 +87,11 @@ describe("contracts", () => {
 
   it("test_manifest_is_get_only_and_matches_pinned_snapshots", async () => {
     expect(ENDPOINTS.every((endpoint) => endpoint["method"] === "GET")).toBe(true);
-    // ponytail: _checkManifest ainda não é exportado por catalogo.ts (é o _check_manifest
-    // privado do python); acesso isolado aqui para não derrubar o arquivo inteiro.
     const catalogo = (await import("../src/features/catalogo/catalogo.js")) as unknown as {
-      _checkManifest?: (path: string, compras?: string, pncp?: string) => Promise<number>;
+      checkManifest?: (path: string, compras?: string, pncp?: string) => Promise<number>;
     };
-    expect(catalogo._checkManifest).toBeTypeOf("function");
-    expect(await catalogo._checkManifest!(MANIFEST_PATH, COMPRAS_SNAPSHOT, PNCP_SNAPSHOT)).toBe(0);
+    expect(catalogo.checkManifest).toBeTypeOf("function");
+    expect(await catalogo.checkManifest!(MANIFEST_PATH, COMPRAS_SNAPSHOT, PNCP_SNAPSHOT)).toBe(0);
   });
 
   it.each(ENDPOINTS)("test_every_manifest_endpoint_is_get [$id]", (endpoint) => {
