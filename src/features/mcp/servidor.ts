@@ -211,12 +211,16 @@ function validateToolName(name: string): void {
 }
 
 function upstreamErrorEnvelope(error: UpstreamError): Rec {
+  // python error.message é cru; em TS Error.message carrega o prefixo "KIND: " (str(error) do python)
+  const rawMessage = error.message.startsWith(`${error.kind}: `)
+    ? error.message.slice(error.kind.length + 2)
+    : error.message;
   return {
     error: {
       provider: error.provider,
       type: error.kind,
       status: error.status,
-      message: error.message,
+      message: rawMessage,
       upstream_message: error.upstreamMessage,
       retryable: error.retryable,
     },
@@ -472,11 +476,20 @@ interface ResourceSpec {
 
 const EMPTY_SCHEMA: Rec = { type: "object", properties: {}, additionalProperties: false };
 
+// fastmcp expõe remove_tool/@server.tool sobre um registro único; o McpServer do SDK
+// tem registro interno bypassado pelos handlers abaixo, então ambos roteiam para o map interno.
+export interface ServidorMcp extends McpServer {
+  removeTool(name: string): void;
+}
+
 function optionalSchema(type: string): Rec {
   return { anyOf: [{ type }, { type: "null" }], default: null };
 }
 
-function buildServerFromManifest(manifest: Rec, service: QueryService = new QueryService()): McpServer {
+function buildServerFromManifest(
+  manifest: Rec,
+  service: QueryService = new QueryService(),
+): ServidorMcp {
   const endpoints = endpointsOf(manifest);
   const mcp = new McpServer({ name: "MCP Compras Públicas Brasil", version: "0.1.0" });
   const tools = new Map<string, ToolSpec>();
@@ -486,6 +499,25 @@ function buildServerFromManifest(manifest: Rec, service: QueryService = new Quer
     validateToolName(spec.name);
     tools.set(spec.name, spec);
   };
+
+  // registro único estilo fastmcp: remove_tool/add_tool operam no map interno servido
+  // pelos handlers abaixo (o registro nativo do McpServer fica bypassado)
+  const servidor = mcp as ServidorMcp;
+  servidor.removeTool = (name: string): void => {
+    tools.delete(name);
+  };
+  servidor.registerTool = ((
+    name: string,
+    spec: Rec,
+    handler: (args: Rec) => Promise<unknown>,
+  ) => {
+    addTool({
+      name,
+      description: String(spec["description"] ?? ""),
+      inputSchema: isRecord(spec["inputSchema"]) ? spec["inputSchema"] : {},
+      handler,
+    });
+  }) as unknown as ServidorMcp["registerTool"];
 
   const atomicOperations = operations(endpoints);
   for (const operation of atomicOperations) {
@@ -912,10 +944,10 @@ function buildServerFromManifest(manifest: Rec, service: QueryService = new Quer
     };
   });
 
-  return mcp;
+  return servidor;
 }
 
-export function buildServer(manifestPath?: string): McpServer {
+export function buildServer(manifestPath?: string): ServidorMcp {
   return buildServerFromManifest(loadManifest(manifestPath));
 }
 
