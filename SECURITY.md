@@ -65,7 +65,7 @@ nem aceitam `managedBy` ou qualquer outro campo desconhecido em formatos não
 genéricos. Isso inclui o Hermes Agent, cujo destino fixo de compatibilidade é
 `.hermes/config.json5`; sua entrada nativa deve corresponder ao formato JSON5
 documentado e ao pin estável exato
-`mcp-compras-publicas-br==<version>`. As skills gerenciadas devem carregar o
+`mcp-compras-publicas-br@<version>`. As skills gerenciadas devem carregar o
 marcador `managed-by: mcp-compras-publicas-br; format: 1`. As operações de
 instalação, atualização e desinstalação atuam sobre dados existentes somente
 quando o marcador ou a assinatura nativa aplicável e o formato esperado da
@@ -73,9 +73,9 @@ entrada confirmam a propriedade.
 
 Configuração é tratada como dado. O instalador nunca executa comandos,
 argumentos, hooks ou outros valores lidos de uma configuração existente; ele
-emite apenas o comando `uvx` fixo para este pacote. O comando emitido sempre
+emite apenas o comando `npx` fixo para este pacote. O comando emitido sempre
 fixa uma versão estável exata do pacote como
-`mcp-compras-publicas-br==<version>`.
+`mcp-compras-publicas-br@<version>`.
 
 A saída e os logs do instalador não devem conter conteúdo de configuração,
 credenciais, tokens ou outros segredos. Paths e avisos devem ser limitados às
