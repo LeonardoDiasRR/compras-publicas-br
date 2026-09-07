@@ -13,13 +13,13 @@ isso não publica uma API.
 No diretório do projeto, o escopo padrão é `project`:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent claude-code
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent claude-code
 ```
 
 Para instalar na configuração do usuário, disponível em todos os projetos:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent claude-code --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent claude-code --scope user
 ```
 
 O instalador preserva os demais servidores e arquivos não relacionados. No
@@ -29,16 +29,16 @@ usa o diretório atual e emite um aviso.
 ## Atualizar e remover
 
 ```bash
-uvx mcp-compras-publicas-br update --agent claude-code
-uvx mcp-compras-publicas-br update --agent claude-code --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent claude-code
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent claude-code --scope user
 
-uvx mcp-compras-publicas-br uninstall --agent claude-code
-uvx mcp-compras-publicas-br uninstall --agent claude-code --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent claude-code
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent claude-code --scope user
 ```
 
-`update` fixa a versão estável mais recente publicada no PyPI. `uninstall`
+`update` fixa a versão estável mais recente publicada no npm. `uninstall`
 remove somente a entrada e a skill reconhecidas como gerenciadas pelo pacote.
-As chamadas de ciclo de vida acima são conveniências executadas via `uvx`; a
+As chamadas de ciclo de vida acima são conveniências executadas via `npx`; a
 entrada MCP gerada sempre grava o comando com a versão exata fixada.
 
 ## Escopos e arquivos
@@ -54,35 +54,35 @@ projeto e armazenado em `~/.claude.json`. O instalador deste projeto usa apenas
 
 ## Registro manual e reconhecimento
 
-O instalador usa a mesma entrada `stdio` e fixa a versão no comando `uvx`:
+O instalador usa a mesma entrada `stdio` e fixa a versão no comando `npx`:
 
 ```text
-uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<versão>
 ```
 
 Para registrar diretamente com a CLI oficial no projeto:
 
 ```bash
-claude mcp add --transport stdio --scope project compras-publicas-br -- uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+claude mcp add --transport stdio --scope project compras-publicas-br -- npx -y mcp-compras-publicas-br@<versão>
 ```
 
 Para registrar globalmente para o usuário:
 
 ```bash
-claude mcp add --transport stdio --scope user compras-publicas-br -- uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+claude mcp add --transport stdio --scope user compras-publicas-br -- npx -y mcp-compras-publicas-br@<versão>
 ```
 
 O separador `--` é obrigatório: tudo depois dele é o comando do servidor e
 seus argumentos, não opções da CLI do Claude Code.
 
 Esses comandos nativos não adicionam `managedBy`, e isso é esperado para o
-adaptador Claude Code. Uma entrada manual com exatamente `command: "uvx"` e os
-três argumentos `--from`, `mcp-compras-publicas-br==<versão>` e
-`mcp-compras-publicas-br` pode ser reconhecida pelo `update` e `uninstall` do
-pacote. Campos extras, inclusive `managedBy`, ou valores divergentes não são
-reconhecidos. Para garantir o ciclo de vida gerenciado, prefira
-`uvx mcp-compras-publicas-br install --agent claude-code`; esse caminho grava a
-forma exata com a versão fixada.
+adaptador Claude Code. Uma entrada manual com exatamente `command: "npx"` e os
+dois argumentos `-y` e `mcp-compras-publicas-br@<versão>` pode ser reconhecida
+pelo `update` e `uninstall` do pacote. Campos extras, inclusive `managedBy`, ou
+valores divergentes não são reconhecidos. Para garantir o ciclo de vida
+gerenciado, prefira
+`npx -y mcp-compras-publicas-br@<versão> plugin install --agent claude-code`;
+esse caminho grava a forma exata com a versão fixada.
 
 Para remover uma entrada criada manualmente:
 
@@ -99,11 +99,10 @@ No escopo de projeto, a entrada fica em `.mcp.json` sob `mcpServers`:
 {
   "mcpServers": {
     "compras-publicas-br": {
-      "command": "uvx",
+      "command": "npx",
       "args": [
-        "--from",
-        "mcp-compras-publicas-br==<versão>",
-        "mcp-compras-publicas-br"
+        "-y",
+        "mcp-compras-publicas-br@<versão>"
       ]
     }
   }
