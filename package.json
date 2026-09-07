@@ -1,0 +1,29 @@
+{
+  "name": "mcp-compras-publicas-br",
+  "version": "0.1.0",
+  "description": "MCP somente leitura para APIs públicas de compras brasileiras",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "bin": { "mcp-compras-publicas-br": "dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc && node scripts/postbuild.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "catalogo": "npm run build --silent && node dist/index.js catalogo",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.0",
+    "json5": "^2.2.3",
+    "smol-toml": "^1.3.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
+}
