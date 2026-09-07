@@ -9,8 +9,13 @@ export function findProjectRoot(start: string): string | null {
   let candidate = resolve(start);
   for (;;) {
     const gitPath = join(candidate, ".git");
-    if (existsSync(gitPath) && (statSync(gitPath).isDirectory() || statSync(gitPath).isFile())) {
-      return candidate;
+    // ponytail: mirrors python OSError-silent is_dir/is_file — TOCTOU race skips the candidate
+    try {
+      if (existsSync(gitPath) && (statSync(gitPath).isDirectory() || statSync(gitPath).isFile())) {
+        return candidate;
+      }
+    } catch {
+      /* fall through to parent */
     }
     const parent = dirname(candidate);
     if (parent === candidate) return null;
