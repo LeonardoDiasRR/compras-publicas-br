@@ -8,7 +8,7 @@ if (command === "catalogo") {
   const code = await catalogoMain(argv.slice(1));
   if (code !== 0) process.exitCode = code;
 } else if (command === "plugin") {
-  const code = await pluginMain(argv.slice(2));
+  const code = await pluginMain(argv.slice(1));
   if (code !== 0) process.exitCode = code;
 } else {
   await servidorMain(argv);

@@ -969,8 +969,9 @@ interface ServerArgs {
   port?: number;
 }
 
-// argparse (choices/invalid int/unrecognized) reimplementado no mínimo
-function parseArgs(argv: string[]): ServerArgs | null {
+// argparse (help/choices/invalid int/unrecognized) reimplementado no mínimo
+// Retorna undefined quando --help foi impresso (argparse exit 0, não inicia servidor).
+function parseArgs(argv: string[]): ServerArgs | null | undefined {
   const tokens: string[] = [];
   for (const token of argv) {
     const match = /^(--manifest|--transport|--port)=(.*)$/.exec(token);
@@ -989,6 +990,19 @@ function parseArgs(argv: string[]): ServerArgs | null {
   };
   for (let index = 0; index < tokens.length; index++) {
     const token = tokens[index]!;
+    if (token === "-h" || token === "--help") {
+      // argparse print_help(): stdout, exit 0.
+      process.stdout.write(
+        "usage: mcp-compras-publicas-br [-h] [--manifest MANIFEST] [--transport {stdio,http}] [--port PORT]\n\n" +
+          "Servidor MCP somente leitura de compras públicas\n\n" +
+          "options:\n" +
+          "  -h, --help            show this help message and exit\n" +
+          "  --manifest MANIFEST\n" +
+          "  --transport {stdio,http}\n" +
+          "  --port PORT\n",
+      );
+      return undefined;
+    }
     if (token === "--manifest") {
       const value = tokens[++index];
       if (value === undefined) return fail("argument --manifest: expected one argument");
@@ -1021,7 +1035,7 @@ function parseArgs(argv: string[]): ServerArgs | null {
 
 export async function main(argv?: string[]): Promise<void> {
   const args = parseArgs(argv ?? process.argv.slice(2));
-  if (args === null) return;
+  if (args === null || args === undefined) return;
   const settings = loadSettings();
   configureLogging(settings);
   const transport = args.transport ?? settings.mcpTransport;
