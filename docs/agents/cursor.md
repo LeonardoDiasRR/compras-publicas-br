@@ -11,17 +11,17 @@ API pública e não usa Docker.
 O escopo padrão é `project`. A partir da raiz do repositório:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent cursor
-uvx mcp-compras-publicas-br update --agent cursor
-uvx mcp-compras-publicas-br uninstall --agent cursor
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent cursor
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent cursor
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent cursor
 ```
 
 Para a configuração global do usuário, acrescente `--scope user`:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent cursor --scope user
-uvx mcp-compras-publicas-br update --agent cursor --scope user
-uvx mcp-compras-publicas-br uninstall --agent cursor --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent cursor --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent cursor --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent cursor --scope user
 ```
 
 `install` faz merge apenas da entrada `compras-publicas-br`, preservando outros
@@ -50,24 +50,23 @@ O pacote fixa a versão registrada, em vez de usar `latest`:
   "mcpServers": {
     "compras-publicas-br": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "npx",
       "args": [
-        "--from",
-        "mcp-compras-publicas-br==0.1.0",
-        "mcp-compras-publicas-br"
+        "-y",
+        "mcp-compras-publicas-br@0.1.0"
       ]
     }
   }
 }
 ```
 
-O adaptador atual gera exatamente `type: "stdio"`, `command: "uvx"` e os
+O adaptador atual gera exatamente `type: "stdio"`, `command: "npx"` e os
 `args` com a versão fixada. A entrada não inclui metadados `managedBy`.
 Substitua `0.1.0` pela versão efetivamente instalada quando editar o arquivo
 manualmente. O comando equivalente é:
 
 ```text
-uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<versão>
 ```
 
 Não coloque credenciais nesse registro. Este servidor consulta somente as
