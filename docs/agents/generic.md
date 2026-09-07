@@ -31,11 +31,10 @@ configuration. The stable entry installed by this project is:
 {
   "mcpServers": {
     "compras-publicas-br": {
-      "command": "uvx",
+      "command": "npx",
       "args": [
-        "--from",
-        "mcp-compras-publicas-br==0.1.0",
-        "mcp-compras-publicas-br"
+        "-y",
+        "mcp-compras-publicas-br@0.1.0"
       ],
       "managedBy": {
         "package": "mcp-compras-publicas-br",
@@ -47,8 +46,9 @@ configuration. The stable entry installed by this project is:
 ```
 
 `command` is the executable, and `args` are passed to it in order. The
-version pin in `--from` is required: replace `0.1.0` only when installing or
-updating to a specific published stable version. Do not remove the pin.
+version pin in `mcp-compras-publicas-br@0.1.0` is required: replace `0.1.0`
+only when installing or updating to a specific published stable version. Do
+not remove the pin.
 
 `managedBy` identifies entries owned by this package:
 
@@ -107,38 +107,38 @@ members.
 Install into the current project:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent generic
+npx -y mcp-compras-publicas-br plugin install --agent generic
 ```
 
 Install into the user scope:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent generic --scope user
+npx -y mcp-compras-publicas-br plugin install --agent generic --scope user
 ```
 
-Update an existing installation to the latest stable PyPI release:
+Update an existing installation to the latest stable npm release:
 
 ```bash
-uvx mcp-compras-publicas-br update --agent generic
-uvx mcp-compras-publicas-br update --agent generic --scope user
+npx -y mcp-compras-publicas-br plugin update --agent generic
+npx -y mcp-compras-publicas-br plugin update --agent generic --scope user
 ```
 
 Remove the package-managed entry and marked skill:
 
 ```bash
-uvx mcp-compras-publicas-br uninstall --agent generic
-uvx mcp-compras-publicas-br uninstall --agent generic --scope user
+npx -y mcp-compras-publicas-br plugin uninstall --agent generic
+npx -y mcp-compras-publicas-br plugin uninstall --agent generic --scope user
 ```
 
-The lifecycle commands intentionally invoke `uvx mcp-compras-publicas-br`
+The lifecycle commands intentionally invoke `npx -y mcp-compras-publicas-br`
 without a version pin. This controls how the CLI package is resolved; the
 generated manifest command remains pinned to the exact package version used by
 the installer. `update` requires a recognizable installation in the requested
-scope and keeps the resulting manifest command version-pinned. If PyPI cannot
-be queried, it makes no file changes. `install` and `update` report a
-configuration conflict instead of overwriting an unrecognized same-named
-entry. `uninstall` leaves such an entry untouched and preserves any skill
-whose management marker does not match this package.
+scope and keeps the resulting manifest command version-pinned. If the npm
+registry cannot be queried, it makes no file changes. `install` and `update`
+report a configuration conflict instead of overwriting an unrecognized
+same-named entry. `uninstall` leaves such an entry untouched and preserves any
+skill whose management marker does not match this package.
 
 ## Agent Consumption
 
