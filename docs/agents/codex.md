@@ -1,11 +1,11 @@
 # Codex
 
 Configure the MCP Compras Públicas Brasil server for Codex CLI. The local
-integration uses the `stdio` transport and starts the server through `uvx`.
+integration uses the `stdio` transport and starts the server through `npx`.
 
 ## Requirements
 
-- Install `uv`, which provides `uvx`.
+- Install Node.js, which provides `npm` and `npx`.
 - Have the `codex` command available.
 
 ## Install, Update, and Remove
@@ -15,20 +15,20 @@ configuration. Use `--scope user` to write the user-level configuration.
 
 ```bash
 # Project scope: .codex/config.toml
-uvx mcp-compras-publicas-br install --agent codex --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent codex --scope project
 
 # User scope: ~/.codex/config.toml
-uvx mcp-compras-publicas-br install --agent codex --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent codex --scope user
 ```
 
 The same scopes apply to lifecycle operations:
 
 ```bash
-uvx mcp-compras-publicas-br update --agent codex --scope project
-uvx mcp-compras-publicas-br update --agent codex --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent codex --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent codex --scope user
 
-uvx mcp-compras-publicas-br uninstall --agent codex --scope project
-uvx mcp-compras-publicas-br uninstall --agent codex --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent codex --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent codex --scope user
 ```
 
 `update` replaces the managed entry with the latest stable package version.
@@ -50,8 +50,8 @@ The corresponding exact TOML entry is:
 
 ```toml
 [mcp_servers.compras-publicas-br]
-command = "uvx"
-args = ["--from", "mcp-compras-publicas-br==0.1.0", "mcp-compras-publicas-br"]
+command = "npx"
+args = ["-y", "mcp-compras-publicas-br@0.1.0"]
 ```
 
 For Codex, the adapter recognizes the exact `command` and pinned `args` shape
@@ -66,7 +66,7 @@ credentials in this entry.
 Codex also supports adding a user-scoped server with its native CLI:
 
 ```bash
-codex mcp add compras-publicas-br -- uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br
+codex mcp add compras-publicas-br -- npx -y mcp-compras-publicas-br@0.1.0
 ```
 
 This native entry does not include package ownership metadata. It can be
@@ -117,18 +117,17 @@ First confirm that Codex sees the configured server:
 codex mcp list
 ```
 
-The output should contain `compras-publicas-br`, with the pinned `uvx`
+The output should contain `compras-publicas-br`, with the pinned `npx`
 command. In the Codex TUI, run `/mcp` to inspect active MCP servers. For an
 end-to-end check, ask Codex to make a small read-only query through the
 `compras-publicas-br` server and report the official source and returned ID.
 
 If the server is missing, check the selected scope and the path reported by
 the install command. If the server is listed but unavailable, verify that
-`uvx` is on `PATH`, then restart Codex after changing configuration or skills.
+`npx` is on `PATH`, then restart Codex after changing configuration or skills.
 
 ## Official Documentation
 
 - [Codex MCP](https://developers.openai.com/codex/extend/mcp)
 - [Codex skills](https://developers.openai.com/codex/build-skills)
 - [Codex AGENTS.md instructions](https://developers.openai.com/codex/agent-configuration/agents-md)
-- [uv documentation](https://docs.astral.sh/uv/)
