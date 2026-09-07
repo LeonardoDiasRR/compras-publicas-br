@@ -45,12 +45,9 @@ function buildClient(
   baseUrl: string,
   provider: "compras" | "pncp",
   maxConcurrency: number,
+  settings: ReturnType<typeof loadSettings>,
   opts: ClientOptions | undefined,
 ): ReadOnlyHttpClient {
-  if (opts?.maxDocumentBytes !== undefined && opts.maxDocumentBytes <= 0) {
-    throw new Error("max_document_bytes must be positive");
-  }
-  const settings = loadSettings();
   return new ReadOnlyHttpClient(baseUrl, {
     requestsPerSecond: settings.httpRequestsPerSecond,
     maxConcurrency,
@@ -69,10 +66,15 @@ export class ComprasClient {
   }
 
   client(opts?: { maxDocumentBytes?: number }): ReadOnlyHttpClient {
+    if (opts?.maxDocumentBytes !== undefined && opts.maxDocumentBytes <= 0) {
+      throw new Error("max_document_bytes must be positive");
+    }
+    const settings = loadSettings();
     return buildClient(
       ComprasClient.baseUrl,
       "compras",
-      loadSettings().comprasMaxConcurrency,
+      settings.comprasMaxConcurrency,
+      settings,
       opts,
     );
   }
@@ -86,6 +88,16 @@ export class PncpClient {
   }
 
   client(opts?: { maxDocumentBytes?: number }): ReadOnlyHttpClient {
-    return buildClient(PncpClient.baseUrl, "pncp", loadSettings().pncpMaxConcurrency, opts);
+    if (opts?.maxDocumentBytes !== undefined && opts.maxDocumentBytes <= 0) {
+      throw new Error("max_document_bytes must be positive");
+    }
+    const settings = loadSettings();
+    return buildClient(
+      PncpClient.baseUrl,
+      "pncp",
+      settings.pncpMaxConcurrency,
+      settings,
+      opts,
+    );
   }
 }
