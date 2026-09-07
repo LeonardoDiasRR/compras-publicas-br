@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolve } from "node:path";
 import { logger } from "../src/shared/runtime.js";
@@ -77,7 +77,7 @@ describe("findProjectRoot / resolveScope", () => {
     const result = resolveScope("user", tmp);
 
     expect(result.scope).toBe("user");
-    expect(resolve(result.root)).toBe(resolve(process.env.HOME ?? process.env.USERPROFILE ?? ""));
+    expect(resolve(result.root)).toBe(resolve(homedir()));
     expect(result.usedGitRoot).toBe(false);
   });
 
