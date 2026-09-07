@@ -474,6 +474,7 @@ export function classifyOperations(spec: Rec, provider: string): Operation[] {
   if (provider !== "compras" && provider !== "pncp") {
     throw new Error(`unsupported provider: ${provider}`);
   }
+  const providerName: "compras" | "pncp" = provider;
   const operations: Operation[] = [];
   const pathsValue = getD(spec, "paths", {});
   const paths = isRec(pathsValue) ? pathsValue : {};
@@ -510,13 +511,13 @@ export function classifyOperations(spec: Rec, provider: string): Operation[] {
         : rootSecurity;
       const [normalizedSecurity, classification] = _securityClassification(security, spec);
       const parameters = _operationParameters(pathItem, rawOperation, spec);
-      let description: unknown = get(rawOperation, "summary");
-      if (!pyBool(description)) description = get(rawOperation, "description");
-      if (!pyBool(description)) description = path;
-      if (typeof description !== "string") description = path;
+      let summaryValue: unknown = get(rawOperation, "summary");
+      if (!pyBool(summaryValue)) summaryValue = get(rawOperation, "description");
+      if (!pyBool(summaryValue)) summaryValue = path;
+      const description: string = typeof summaryValue === "string" ? summaryValue : path;
       // ponytail: OperationSchema.parse skipped; every field is constructed typed here, pydantic
       // would only re-check our own literals.
-      const operation = {
+      const operation: Operation = {
         id: `${provider}.GET.${path}`,
         provider,
         method: "GET",
@@ -527,8 +528,8 @@ export function classifyOperations(spec: Rec, provider: string): Operation[] {
         classification,
         implemented: false,
         tool: null,
-      } as unknown as Operation;
-      const extra = operation as unknown as Rec;
+      };
+      const extra = operation;
       extra["responses"] = _resolve(getD(rawOperation, "responses", {}), spec);
       extra["deprecated"] = pyBool(getD(rawOperation, "deprecated", false));
       const componentsValue = getD(spec, "components", {});
@@ -1002,10 +1003,10 @@ function _manifestEntry(operation: Operation, tool: string | null): Rec {
   } else if (operation.classification === "PUBLIC_USEFUL" && tool === null) {
     entry["exclusion"] = {
       reason: "tool_mapping_review_required",
-      suggested_tool: _suggestedToolName(operation as unknown as Rec),
+      suggested_tool: _suggestedToolName(operation),
     };
   }
-  const extra = operation as unknown as Rec;
+  const extra = operation;
   for (const key of ["responses", "deprecated", "security_schemes", "operation_metadata"]) {
     if (Object.hasOwn(extra, key)) entry[key] = extra[key];
   }
@@ -1339,7 +1340,7 @@ async function _checkSourceCompleteness(
     const discoveredById = new Map<string, Rec>();
     const discoveredClassifications = new Map<string, string>();
     for (const operation of discovered) {
-      discoveredById.set(operation.id, _upstreamContract(operation as unknown as Rec));
+      discoveredById.set(operation.id, _upstreamContract(operation));
       discoveredClassifications.set(operation.id, operation.classification);
     }
     const manifestById = new Map<string, Rec>();
@@ -1409,9 +1410,19 @@ async function _checkSourceCompleteness(
 }
 
 function _writeYaml(value: unknown, output: string | null): void {
-  // ponytail: lineWidth 0 skips Python safe_dump's wrapping heuristics; QUOTE_SINGLE keeps
-  // PyYAML (YAML 1.1) from re-reading date/bool-lookalike strings as date/bool objects.
-  const text = yamlStringify(value, { lineWidth: 0, defaultStringType: "QUOTE_SINGLE" });
+  // ponytail: mimics yaml.safe_dump(sort_keys=False) style (plain keys/strings, sequences not
+  // indented, ~80 col, single quotes only when YAML 1.1 would re-read the scalar as non-string);
+  // residual ceiling: the wrap algorithm differs from libyaml, so line breaks on long plain
+  // scalars land on different words. Upgrade path: port libyaml's best-wrap solver if byte
+  // parity ever matters (semantic round-trip via yaml.safe_load is already identical).
+  const text = yamlStringify(value, {
+    lineWidth: 80,
+    defaultStringType: "PLAIN",
+    defaultKeyType: "PLAIN",
+    indentSeq: false,
+    singleQuote: true,
+    version: "1.1",
+  });
   if (output === null) process.stdout.write(text);
   else writeFileSync(output, text, "utf8");
 }
@@ -1906,6 +1917,18 @@ function _isOption(token: string): boolean {
   return token.startsWith("-") && token.length > 1;
 }
 
+// argparse supports --opt=value for every option; only value-taking flags are joined here,
+// --check-tools-style nargs="*" flags reject "=" in argparse too.
+function _splitJoinedOption(
+  token: string,
+  valueFlags: string[]
+): { name: string; value: string } | null {
+  if (!token.startsWith("--") || !token.includes("=")) return null;
+  const name = token.slice(0, token.indexOf("="));
+  if (!valueFlags.includes(name)) return null;
+  return { name, value: token.slice(token.indexOf("=") + 1) };
+}
+
 // Mirrors _parser() with the legacy leading `check <file>` positional accepted for --check.
 // ponytail: no argparse abbreviation matching (--comp → --compare); nothing in the repo relies on it.
 function _parseArgs(argv: string[]): ParseResult {
@@ -1922,14 +1945,22 @@ function _parseArgs(argv: string[]): ParseResult {
   const conflict = (token: string): ParseResult =>
     fail(`argument ${token}: not allowed with argument ${firstCheckOption as string}`);
   for (; i < argv.length; i++) {
-    const token = argv[i] as string;
+    let token = argv[i] as string;
+    let joinedValue: string | null = null;
+    const joined = _splitJoinedOption(token, ["--check", "--coverage-doc"]);
+    if (joined !== null) {
+      token = joined.name;
+      joinedValue = joined.value;
+    }
     if (token === "-h" || token === "--help") {
       printHelp();
       return { kind: "help" };
     } else if (token === "--check") {
-      if (i + 1 >= argv.length) return fail("argument --check: expected one argument");
+      if (joinedValue === null && i + 1 >= argv.length) {
+        return fail("argument --check: expected one argument");
+      }
       if (firstCheckOption !== null && args.check === undefined) return conflict(token);
-      args.check = argv[++i] as string;
+      args.check = joinedValue ?? (argv[++i] as string);
       firstCheckOption = token;
     } else if (token === "--check-tools" || token === "--check-coverage-doc") {
       if (firstCheckOption !== null) return conflict(token);
@@ -1941,8 +1972,10 @@ function _parseArgs(argv: string[]): ParseResult {
       else args.checkCoverageDoc = values;
       firstCheckOption = token;
     } else if (token === "--coverage-doc") {
-      if (i + 1 >= argv.length) return fail("argument --coverage-doc: expected one argument");
-      args.coverageDoc = argv[++i] as string;
+      if (joinedValue === null && i + 1 >= argv.length) {
+        return fail("argument --coverage-doc: expected one argument");
+      }
+      args.coverageDoc = joinedValue ?? (argv[++i] as string);
     } else if (_isOption(token)) {
       unrecognized.push(token);
     } else if (token === "discover" || token === "render-tools" || token === "render-coverage") {
@@ -1961,19 +1994,29 @@ function _parseArgs(argv: string[]): ParseResult {
   // Subparser: unknown tokens (with their values) accumulate into parse_args' extras.
   const extras: string[] = [];
   for (; i < argv.length; i++) {
-    const token = argv[i] as string;
+    let token = argv[i] as string;
+    let joinedValue: string | null = null;
+    const subValueFlags =
+      args.command === "discover"
+        ? ["--compras", "--pncp", "--compare", "--output"]
+        : args.command === "render-coverage"
+          ? ["--output", "--coverage-doc"]
+          : ["--output"];
+    const joined = _splitJoinedOption(token, subValueFlags);
+    if (joined !== null) {
+      token = joined.name;
+      joinedValue = joined.value;
+    }
     if (token === "-h" || token === "--help") {
       printHelp();
       return { kind: "help" };
     }
-    const needsValue =
-      (args.command === "discover" &&
-        ["--compras", "--pncp", "--compare", "--output"].includes(token)) ||
-      (args.command !== "discover" &&
-        (token === "--output" || (args.command === "render-coverage" && token === "--coverage-doc")));
+    const needsValue = subValueFlags.includes(token);
     if (needsValue) {
-      if (i + 1 >= argv.length) return fail(`argument ${token}: expected one argument`);
-      const value = argv[++i] as string;
+      if (joinedValue === null && i + 1 >= argv.length) {
+        return fail(`argument ${token}: expected one argument`);
+      }
+      const value = joinedValue ?? (argv[++i] as string);
       if (token === "--compras") args.compras = value;
       else if (token === "--pncp") args.pncp = value;
       else if (token === "--compare") args.compare = value;
@@ -2092,6 +2135,7 @@ export async function main(argv: string[]): Promise<number> {
     printHelp();
     return 0;
   } catch (error) {
+    // ponytail: catches everything, python re-raised unexpected as traceback exit 1
     process.stderr.write(`ERROR: ${error instanceof Error ? error.message : String(error)}\n`);
     return 2;
   }
