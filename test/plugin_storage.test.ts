@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   atomicWrite,
+  dumpDocument,
   loadDocument,
   mergeMcpEntry,
   removeMcpEntry,
@@ -95,6 +96,25 @@ describe("load_document / merge_mcp_entry", () => {
       "utf-8",
     );
 
+    expect(loadDocument(path, "toml")).toEqual({
+      mcpServers: { example: { command: "uvx", args: ["--from", "pkg"] } },
+    });
+  });
+
+  it("toml round-trip preserva dados e descarta comentários (ceiling documentado)", () => {
+    const dir = mkTmp();
+    const path = join(dir, "mcp.toml");
+    writeFileSync(
+      path,
+      '# keep me\n[mcpServers.example]\ncommand = "uvx" # inline\nargs = ["--from", "pkg"]\n',
+      "utf-8",
+    );
+
+    const dumped = dumpDocument(loadDocument(path, "toml") as Doc, "toml");
+
+    expect(dumped).not.toContain("keep me");
+    expect(dumped).not.toContain("inline");
+    writeFileSync(path, dumped, "utf-8");
     expect(loadDocument(path, "toml")).toEqual({
       mcpServers: { example: { command: "uvx", args: ["--from", "pkg"] } },
     });
