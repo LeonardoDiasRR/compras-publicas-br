@@ -1488,7 +1488,7 @@ function formatPercent(ratio: number): string {
   return `${(ratio * 100).toFixed(1)}%`;
 }
 
-async function _checkManifest(
+export async function checkManifest(
   path: string,
   compras: string | undefined = undefined,
   pncp: string | undefined = undefined
@@ -2115,7 +2115,7 @@ export async function main(argv: string[]): Promise<number> {
       (value) => value !== undefined
     ).length;
     if (checkModes > 1) throw new Error("only one check mode is allowed");
-    if (args.check) return await _checkManifest(args.check);
+    if (args.check) return await checkManifest(args.check);
     if (args.checkTools !== undefined) {
       const [toolsPath, manifestPath] = _checkPair(
         args.checkTools,
