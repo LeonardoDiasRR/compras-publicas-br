@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 
 import { PluginError } from "../src/features/plugin/modelo.js";
 import {
@@ -8,12 +9,18 @@ import {
   versionedCommand,
 } from "../src/features/plugin/versoes.js";
 
+const packageVersion = (
+  JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    version: string;
+  }
+).version;
+
 // ponytail: test_installed_version_reads_package metadata monkeypatchava importlib.metadata;
 // sem equivalente no npm — installedVersion lê package.json, então verificamos o valor real.
 describe("installedVersion", () => {
   it("lê a versão do pacote instalado (package.json)", () => {
     expect(installedVersion()).toMatch(/^\d+\.\d+\.\d+/);
-    expect(installedVersion()).toBe("0.1.0");
+    expect(installedVersion()).toBe(packageVersion);
   });
 });
 
