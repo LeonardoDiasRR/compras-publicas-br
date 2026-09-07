@@ -6,63 +6,23 @@ name: Publish
       - "v*"
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          python-version: "3.12"
-          version: "0.8.17"
-      - run: uv sync --locked --all-groups
-      - name: Verify tag matches project version
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          uv run python -c '
-          import os
-          import re
-          import tomllib
-
-          tag = os.environ["TAG_NAME"]
-          if re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag) is None:
-              raise SystemExit(f"Tag {tag!r} must match vN.N.N")
-          with open("pyproject.toml", "rb") as project_file:
-              project_version = tomllib.load(project_file)["project"]["version"]
-          if tag != f"v{project_version}":
-              raise SystemExit(
-                  f"Tag {tag!r} does not match project.version {project_version!r}"
-              )
-          '
-      - run: uv run ruff check .
-      - run: uv run pyright
-      - run: uv run --offline pytest -m "not live" -q
-      - run: uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
-      - name: Verify read-only HTTP surface
-        run: |
-          uv run python -c "import re, sys; from pathlib import Path; pattern = re.compile(r'\.(post|put|patch|delete)\('); roots = [Path('src/shared/http_readonly.py'), Path('src/features/provedores')]; missing = [str(path) for path in roots if not path.exists()]; sys.exit('Missing read-only scan root(s): ' + ', '.join(missing)) if missing else None; files = [roots[0], *roots[1].rglob('*.py')]; matches = [f'{path}:{line_number}:{line}' for path in files for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1) if pattern.search(line)]; print('\n'.join(matches)) if matches else None; print('Forbidden HTTP mutation method found.', file=sys.stderr) if matches else None; sys.exit(1 if matches else 0)"
-      - run: uv build
-      - run: uv run python -m src.features.plugin.cli --help
-      - uses: actions/upload-artifact@v4
-        with:
-          name: distributions
-          path: dist/
-          if-no-files-found: error
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/mcp-compras-publicas-br
-    permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          name: distributions
-          path: dist/
-      - name: Publish distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run
+      - run: npm run build
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
