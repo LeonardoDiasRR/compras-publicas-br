@@ -1,11 +1,17 @@
 # Registro de alterações
 
+## [0.1.0] - 2026-09-07
+
+### Alterado
+
+- Projeto migrado de Python para TypeScript (Node >= 20). Registro de agentes passa de `uvx` para `npx -y mcp-compras-publicas-br@<versão>`. Sem mudança de comportamento, ferramentas ou envelope.
+
 ## [Não lançado]
 
 ### Adicionado
 
 - Servidor MCP inicial somente leitura do Compras.gov.br/PNCP.
-- Pacote PyPI com suporte a `uvx`, incluindo comandos documentados de instalação, atualização e desinstalação.
+- Pacote npm com suporte a `npx`, incluindo comandos documentados de instalação, atualização e desinstalação.
 - Dez adaptadores de agentes.
 - Skills em pt-BR para trabalhar com o servidor.
 - Snapshots versionados do OpenAPI.
