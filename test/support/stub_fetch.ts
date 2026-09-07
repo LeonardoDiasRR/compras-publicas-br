@@ -1,5 +1,4 @@
 export interface StubCall { url: string; init: RequestInit }
-export type StubHandler = (url: URL, init: RequestInit) => Response | undefined | Promise<Response | undefined>;
 
 export function stubFetch(...routes: [RegExp | string, Response | ((url: URL, init: RequestInit) => Response)][]) {
   const handlerMap = routes.map(([matcher, response]) => ({ matcher, response }));
