@@ -1,14 +1,21 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   classifyOperations,
   compareCatalogs,
   loadOpenapi,
+  main,
   renderCoverage,
 } from "../src/features/catalogo/catalogo.js";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("catalogo", () => {
   it.each([
@@ -79,5 +86,23 @@ describe("catalogo", () => {
     expect(report.public_useful).toBe(1);
     expect(report.implemented).toBe(1);
     expect(report.ratio).toBe(1.0);
+  });
+
+  it("check_rejects_invalid_manifest_with_exit_1_and_error_lines", async () => {
+    const file = path.join(mkdtempSync(path.join(tmpdir(), "catalogo-")), "manifest.yaml");
+    writeFileSync(file, "catalog_version: 1\nendpoints: []\n", "utf8");
+    const error = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const code = await main(["--check", file]);
+    expect(code).toBe(1);
+    const written = error.mock.calls.map((call) => String(call[0])).join("");
+    expect(written).toContain("ERROR: manifest requires source_version for compras and pncp");
+  });
+
+  it("conflicting_check_options_exit_2_like_argparse", async () => {
+    const error = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const code = await main(["--check", "coverage/endpoints.yaml", "--check-tools", "TOOLS.md"]);
+    expect(code).toBe(2);
+    const written = error.mock.calls.map((call) => String(call[0])).join("");
+    expect(written).toContain("argument --check-tools: not allowed with argument --check");
   });
 });
