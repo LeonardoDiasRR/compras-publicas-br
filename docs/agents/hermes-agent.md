@@ -12,17 +12,17 @@ O instalador aceita dois escopos:
 Use uma versão estável fixada no comando. O exemplo abaixo usa a versão publicada no projeto:
 
 ```bash
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br install --agent hermes-agent --scope project
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br update --agent hermes-agent --scope project
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br uninstall --agent hermes-agent --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent hermes-agent --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent hermes-agent --scope project
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent hermes-agent --scope project
 ```
 
 Para a configuração pessoal, use `--scope user` em todo o ciclo de vida:
 
 ```bash
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br install --agent hermes-agent --scope user
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br update --agent hermes-agent --scope user
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br uninstall --agent hermes-agent --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent hermes-agent --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent hermes-agent --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent hermes-agent --scope user
 ```
 
 `install` instala ou corrige a entrada gerenciada e a skill; `update` atualiza o pin da versão e a skill; `uninstall` remove somente a entrada e a skill gerenciadas pelo pacote.
@@ -34,11 +34,10 @@ O Hermes documenta MCP em `~/.hermes/config.yaml`, sob `mcp_servers`. Para um se
 ```yaml
 mcp_servers:
   compras-publicas-br:
-    command: uvx
+    command: npx
     args:
-      - --from
-      - mcp-compras-publicas-br==0.1.0
-      - mcp-compras-publicas-br
+      - -y
+      - mcp-compras-publicas-br@0.1.0
 ```
 
 As skills são diretórios que contêm um arquivo `SKILL.md`. O caminho padrão de skills instaladas pelo Hermes é `~/.hermes/skills/<nome-da-skill>/SKILL.md`. O formato documentado para `SKILL.md` começa com front matter YAML, por exemplo:
@@ -68,9 +67,8 @@ A entrada é `mcp_servers.compras-publicas-br` e contém o comando stdio com pin
 {
   mcp_servers: {
     "compras-publicas-br": {
-      command: "uvx",
-      args: ["--from", "mcp-compras-publicas-br==0.1.0", "mcp-compras-publicas-br"],
-      managedBy: {package: "mcp-compras-publicas-br", schemaVersion: 1},
+      command: "npx",
+      args: ["-y", "mcp-compras-publicas-br@0.1.0"],
     },
   },
 }
