@@ -1,4 +1,5 @@
-import { existsSync, lstatSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, writeFileSync, unlinkSync, renameSync, mkdirSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { dirname } from "node:path";
 
 import type { ScopeName } from "./modelo.js";
@@ -67,7 +68,10 @@ export function writeManagedSkill(path: string, agentId: string, agentName: stri
     mkdirSync(dirname(path), { recursive: true });
   }
 
-  writeFileSync(path, content);
+  // ponytail: mirrors python atomic_write — tmp file in same dir + rename (os.replace equivalent)
+  const tempPath = `${path}.tmp-${randomBytes(8).toString("hex")}`;
+  writeFileSync(tempPath, content);
+  renameSync(tempPath, path);
   return true;
 }
 
