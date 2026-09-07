@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { parse, stringify } from "yaml";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 import { TOOL_NAME_RE, renderCoverage } from "../src/features/catalogo/catalogo.js";
 import { OperationSchema, type Operation } from "../src/features/catalogo/modelos.js";
@@ -62,6 +62,10 @@ function pathQueryNames(endpoint: Rec): Set<string> {
       .map((parameter) => parameter["name"] as string),
   );
 }
+
+afterAll(async () => {
+  if (manifestClient) (await manifestClient).close();
+});
 
 describe("contracts", () => {
   it("test_manifest_has_complete_public_coverage_and_no_unknown_classifications", () => {
@@ -286,10 +290,12 @@ describe("contracts", () => {
     const previousFetch = globalThis.fetch;
     globalThis.fetch = stub.fetchImpl;
     let toolResult!: Awaited<ReturnType<Client["callTool"]>>;
+    let client!: Client;
     try {
-      const client = await connectedClient(errorManifest);
+      client = await connectedClient(errorManifest);
       toolResult = await client.callTool({ name: errorOperation.tool as string, arguments: {} });
     } finally {
+      await client?.close();
       globalThis.fetch = previousFetch;
     }
 
