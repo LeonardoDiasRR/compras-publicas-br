@@ -9,50 +9,50 @@ whose native setup uses Cordis YAML configuration.
 The plugin CLI uses `project` scope by default. It walks upward from the
 current directory to the Git root; if no Git root exists, it uses the current
 directory and reports a warning. This behavior belongs to this repository's
-[scope resolver](../../src/features/plugin/escopo.py), not to DeepSeek Harness.
+[scope resolver](../../src/features/plugin/escopo.ts), not to DeepSeek Harness.
 
-The lifecycle commands below invoke this package through `uvx` and therefore
-require a published package on PyPI. They do not execute this checkout.
+The lifecycle commands below invoke this package through `npx` and therefore
+require a published package on npm. They do not execute this checkout.
 
 Install for the current project:
 
 ```text
-uvx mcp-compras-publicas-br install --agent deepseek-harness
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent deepseek-harness
 ```
 
 Install in the user scope:
 
 ```text
-uvx mcp-compras-publicas-br install --agent deepseek-harness --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin install --agent deepseek-harness --scope user
 ```
 
 Update the recognized installation and managed skill:
 
 ```text
-uvx mcp-compras-publicas-br update --agent deepseek-harness
-uvx mcp-compras-publicas-br update --agent deepseek-harness --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent deepseek-harness
+npx -y mcp-compras-publicas-br@0.1.0 plugin update --agent deepseek-harness --scope user
 ```
 
 Remove only the recognized installation and managed skill:
 
 ```text
-uvx mcp-compras-publicas-br uninstall --agent deepseek-harness
-uvx mcp-compras-publicas-br uninstall --agent deepseek-harness --scope user
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent deepseek-harness
+npx -y mcp-compras-publicas-br@0.1.0 plugin uninstall --agent deepseek-harness --scope user
 ```
 
 The generated server command is pinned to the package version. The following
 is the exact stdio command for version `0.1.0`:
 
 ```text
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@0.1.0
 ```
 
-This command resolves the package through PyPI and requires
-`mcp-compras-publicas-br==0.1.0` to have been published there; `uvx` does not
-run this checkout or an unpublished local build. See the [`uvx --from` and
-versioning documentation](https://docs.astral.sh/uv/guides/tools/#requesting-specific-versions).
+This command resolves the package through the npm registry and
+requires `mcp-compras-publicas-br@0.1.0` to have been published there; `npx` does
+not run this checkout or an unpublished local build. See the
+[`npx` documentation](https://docs.npmjs.com/cli/commands/npx).
 
-Do not replace the exact pin with an unversioned `uvx` command in a persisted
+Do not replace the exact pin with an unversioned `npx` command in a persisted
 configuration. `update` is the lifecycle operation that changes the pin.
 
 ## Official MCP Format
@@ -71,11 +71,10 @@ The native entry has this shape:
       config:
         serverName: compras-publicas-br
         transport: stdio
-        command: uvx
+        command: npx
         args:
-          - --from
-          - mcp-compras-publicas-br==0.1.0
-          - mcp-compras-publicas-br
+          - -y
+          - mcp-compras-publicas-br@0.1.0
 ```
 
 `serverName` must be unique within the active registration scope and must
@@ -111,10 +110,10 @@ the profile package manager, as shown in the
 dsh plugin --profile <profile> add @deepseek-ai/dsh-mcp-client
 ```
 
-The package's fixed `uvx` command starts the read-only MCP server over stdio;
+The package's fixed `npx` command starts the read-only MCP server over stdio;
 DeepSeek Harness then exposes the server's tools through its MCP client. The
 server command and read-only behavior are defined by this repository's
-[plugin implementation](../../src/features/plugin/adaptadores.py) and
+[plugin implementation](../../src/features/plugin/adaptadores.ts) and
 [project documentation](../../README.md).
 
 ## Official Skill Format
@@ -167,7 +166,7 @@ $DSH_AGENTS_HOME/skills/compras-publicas-br/SKILL.md
 ## Scopes And Adapter Output
 
 The installer resolves these scopes as follows. These are this repository's
-[adapter declarations](../../src/features/plugin/adaptadores.py), not native
+[adapter declarations](../../src/features/plugin/adaptadores.ts), not native
 DeepSeek Harness MCP paths:
 
 | Scope | Installer config path | Installer skill path |
@@ -188,7 +187,7 @@ managed skill file shown above. DeepSeek Harness officially expects the
 Cordis YAML plugin row and does not document that JSON file as an MCP
 configuration input. Installing the adapter alone therefore does not
 guarantee that DeepSeek Harness loads the MCP server. See the adapter's
-[native-command fields](../../src/features/plugin/adaptadores.py).
+[native-command fields](../../src/features/plugin/adaptadores.ts).
 
 The generated skill template currently contains the package management marker
 but does not provide the YAML frontmatter required by the official filesystem
@@ -201,7 +200,7 @@ lifecycle commands must continue to recognize the file.
 The fallback also does not install `@deepseek-ai/dsh-mcp-client` into a profile
 or write `cordis.patch.yml`; perform those native steps explicitly. The
 installer flow is implemented in the repository's
-[installer service](../../src/features/plugin/instalador.py).
+[installer service](../../src/features/plugin/instalador.ts).
 
 ## Verification
 
@@ -223,7 +222,7 @@ installer flow is implemented in the repository's
 
     The output must contain `@deepseek-ai/dsh-mcp-client`,
    `serverName: compras-publicas-br`, `transport: stdio`, and the exact pinned
-   `mcp-compras-publicas-br==0.1.0` argument.
+   `mcp-compras-publicas-br@0.1.0` argument.
 
 3. Start the profile:
 
