@@ -2,6 +2,7 @@ import { chmodSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } 
 import { basename, dirname, join } from "node:path";
 
 import json5 from "json5";
+// ponytail: ceiling — parse→plain→stringify perde comentários/layout do TOML (python usava tomlkit round-trip). Upgrade path: toml-edit-style dep se usuários do codex reclamarem.
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 
 import { ConfigFormatError } from "./modelo.js";
