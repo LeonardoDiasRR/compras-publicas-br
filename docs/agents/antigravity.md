@@ -10,19 +10,19 @@ Run these commands from the project root. The default scope is `project`.
 
 ```bash
 # Project scope: <project>/.agents/...
-uvx mcp-compras-publicas-br install --agent antigravity
-uvx mcp-compras-publicas-br update --agent antigravity
-uvx mcp-compras-publicas-br uninstall --agent antigravity
+npx -y mcp-compras-publicas-br@V plugin install --agent antigravity
+npx -y mcp-compras-publicas-br@V plugin update --agent antigravity
+npx -y mcp-compras-publicas-br@V plugin uninstall --agent antigravity
 
 # User scope: ~/.gemini/config/...
-uvx mcp-compras-publicas-br install --agent antigravity --scope user
-uvx mcp-compras-publicas-br update --agent antigravity --scope user
-uvx mcp-compras-publicas-br uninstall --agent antigravity --scope user
+npx -y mcp-compras-publicas-br@V plugin install --agent antigravity --scope user
+npx -y mcp-compras-publicas-br@V plugin update --agent antigravity --scope user
+npx -y mcp-compras-publicas-br@V plugin uninstall --agent antigravity --scope user
 ```
 
 `install` and `update` register the server with a stable, exact package
 version. `update` requires an existing managed MCP entry; it resolves the
-newest stable PyPI release before writing the new pin and does not install a
+newest stable npm release before writing the new pin and does not install a
 missing entry. Use `install` first. `uninstall` removes only the entry and
 skill managed by this package; unrelated servers and custom skills are
 preserved.
@@ -58,19 +58,18 @@ installed or updated:
 {
   "mcpServers": {
     "compras-publicas-br": {
-      "command": "uvx",
+      "command": "npx",
       "args": [
-        "--from",
-        "mcp-compras-publicas-br==<version>",
-        "mcp-compras-publicas-br"
+        "-y",
+        "mcp-compras-publicas-br@<version>"
       ]
     }
   }
 }
 ```
 
-This is a local `stdio` server: `command` starts `uvx`, and `args` runs the
-version-pinned `mcp-compras-publicas-br` executable. Do not replace it with a
+This is a local `stdio` server: `command` starts `npx`, and `args` runs the
+version-pinned `mcp-compras-publicas-br` package. Do not replace it with a
 `serverUrl`; that is the remote-server form and is not used here. The
 Antigravity adapter emits no `managedBy` field. It recognizes ownership only
 when the entry has the exact pinned `command` and `args` shape shown above;
@@ -79,7 +78,7 @@ extra, missing, or mismatched fields may not be recognized as managed.
 The equivalent pinned command is:
 
 ```bash
-uvx --from mcp-compras-publicas-br==<version> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<version>
 ```
 
 ## Validation
@@ -87,15 +86,15 @@ uvx --from mcp-compras-publicas-br==<version> mcp-compras-publicas-br
 1. Confirm that the selected file exists and parses as JSON:
 
    ```bash
-   python -m json.tool .agents/mcp_config.json
+   node -e "JSON.parse(require('fs').readFileSync('.agents/mcp_config.json', 'utf8'))"
    ```
 
    For user scope, validate `~/.gemini/config/mcp_config.json` instead.
 
-2. Confirm that `mcpServers["compras-publicas-br"]` has `command: "uvx"` and
-   exactly three arguments `--from`, `mcp-compras-publicas-br==<version>`,
-   `mcp-compras-publicas-br`, with no extra entry fields. Extra, missing, or
-   mismatched fields may prevent the adapter from recognizing the entry.
+2. Confirm that `mcpServers["compras-publicas-br"]` has `command: "npx"` and
+   exactly two arguments `-y` and `mcp-compras-publicas-br@<version>`, with no
+   extra entry fields. Extra, missing, or mismatched fields may prevent the
+   adapter from recognizing the entry.
 
 3. In Antigravity IDE, open `...` in the agent side panel, select **MCP
    Servers**, then **Manage MCP Servers** and **View raw config**. In
