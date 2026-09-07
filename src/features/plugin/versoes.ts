@@ -51,7 +51,10 @@ async function fetchPayload(): Promise<unknown> {
     });
   }
   if (!response.ok) {
-    throw new PluginError("Could not fetch package releases from npm registry");
+    const error = new Error(`HTTP ${response.status}`);
+    throw new PluginError(`Could not fetch package releases from npm registry: ${response.status}`, {
+      cause: error,
+    });
   }
   try {
     return await response.json();
