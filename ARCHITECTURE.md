@@ -31,7 +31,7 @@ A entrada de registro de cada agente inicia o servidor localmente por meio de
 `stdio`, com uma fixação exata do pacote. O comando gerado é equivalente a:
 
 ```text
-uvx --from mcp-compras-publicas-br==<exact-version> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<versão-exata>
 ```
 
 A versão é a versão do pacote usada pelo instalador, nunca uma referência à
@@ -41,7 +41,7 @@ versão mais recente sem fixação.
 
 ### Servidor MCP
 
-`src/features/mcp/servidor.py` constrói o servidor FastMCP a partir de
+`src/features/mcp/servidor.ts` constrói o servidor MCP a partir de
 `coverage/endpoints.yaml`:
 
 - Cada GET `PUBLIC_USEFUL` implementado é registrado como uma ferramenta
@@ -54,7 +54,7 @@ versão mais recente sem fixação.
 
 ### QueryService
 
-`src/features/consultas/servico.py` valida os argumentos catalogados, normaliza
+`src/features/consultas/servico.ts` valida os argumentos catalogados, normaliza
 identificadores como CNPJ, renderiza apenas os parâmetros de caminho
 catalogados e separa os valores de caminho dos valores de consulta. Ele
 seleciona `ComprasClient` ou `PncpClient`, chama o cliente HTTP compartilhado,
@@ -86,7 +86,7 @@ aceita de um chamador MCP.
 
 ### ReadOnlyHttpClient
 
-`src/shared/http_readonly.py` é a única fronteira HTTP de saída. Ela expõe
+`src/shared/http_readonly.ts` é a única fronteira HTTP de saída. Ela expõe
 apenas `get()` e impõe:
 
 - HTTPS e um hostname oficial presente na lista de permissões;
@@ -148,11 +148,10 @@ nomeação estável e atualização do manifesto.
 A CI de pull request executa:
 
 ```text
-uv run ruff check .
-uv run pyright
-uv run pytest -m "not live" -q
-uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
-uv build
+npm run typecheck
+npx vitest run
+npm run catalogo -- check coverage/endpoints.yaml
+npm run build
 ```
 
 Ela também verifica a fronteira HTTP e os adaptadores de provedores em busca de
@@ -163,8 +162,7 @@ O workflow agendado `Upstream Drift` obtém as duas URLs OpenAPI oficiais fixas 
 executa:
 
 ```text
-uv run python -m src.features.catalogo.catalogo discover \
-  --official --compare coverage/endpoints.yaml --fail-on-diff
+npm run catalogo -- discover --official --compare coverage/endpoints.yaml --fail-on-diff
 ```
 
 Qualquer divergência de contrato fica, portanto, visível como uma falha de CI,
@@ -220,14 +218,14 @@ snapshots. Eles não introduzem outro caminho HTTP ao redor do `QueryService`.
 O servidor executável oferece suporte a:
 
 - `stdio` para clientes MCP locais e a invocação padrão;
-- transporte `http` direto do FastMCP quando selecionado explicitamente a partir
-  do Python, usando uma porta configurável (padrão `8000`).
+- transporte `http` quando selecionado explicitamente via `MCP_TRANSPORT`,
+  usando uma porta configurável (padrão `8000`).
 
 ```text
-uv run python -m src.features.mcp.servidor --transport http
+MCP_TRANSPORT=http npm start
 ```
 
-O transporte HTTP é um processo Python direto e é independente do caminho de
+O transporte HTTP é um processo Node.js direto e é independente do caminho de
 instalação do plugin. Ele não altera o registro de ferramentas, as origens dos
 provedores, as garantias de somente leitura nem o fluxo de consultas.
 
