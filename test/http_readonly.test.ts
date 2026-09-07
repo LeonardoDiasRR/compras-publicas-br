@@ -61,6 +61,41 @@ describe("http_readonly", () => {
     expect(calls.length).toBe(1);
   });
 
+  it("client_retries_retryable_status_then_succeeds", async () => {
+    let attempts = 0;
+    const { fetchImpl, calls } = stubFetch([
+      "https://dadosabertos.compras.gov.br/api/contratos",
+      () => {
+        attempts += 1;
+        return attempts === 1
+          ? new Response("busy", { status: 503 })
+          : jsonResponse({ ok: true });
+      },
+    ]);
+    const client = new ReadOnlyHttpClient("https://dadosabertos.compras.gov.br/api/contratos", {
+      maxRetries: 3,
+      fetchImpl,
+    });
+    expect(await client.get("/lista")).toEqual({ ok: true });
+    expect(calls.length).toBe(2);
+  });
+
+  it("client_gives_up_after_max_retries", async () => {
+    const { fetchImpl, calls } = stubFetch([
+      "https://dadosabertos.compras.gov.br/api/contratos",
+      () => new Response("down", { status: 503 }),
+    ]);
+    const client = new ReadOnlyHttpClient("https://dadosabertos.compras.gov.br/api/contratos", {
+      maxRetries: 1,
+      fetchImpl,
+    });
+    const err = await client.get("/lista").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(UpstreamError);
+    expect((err as UpstreamError).kind).toBe("UPSTREAM_UNAVAILABLE");
+    expect((err as UpstreamError).status).toBe(503);
+    expect(calls.length).toBe(2);
+  });
+
   it("client_has_no_write_methods", () => {
     for (const method of ["post", "put", "patch", "delete"]) {
       expect(ReadOnlyHttpClient).not.toHaveProperty(method);
