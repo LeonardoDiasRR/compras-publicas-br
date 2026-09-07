@@ -14,8 +14,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run build
       - run: npx vitest run
       - run: npm run catalogo -- check coverage/endpoints.yaml
       - name: Verify read-only HTTP surface
         run: node -e "const s=require('fs').readFileSync('src/shared/http_readonly.ts','utf8').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,''); if (/\.(post|put|patch|delete|request)\s*\(/.test(s)) { console.error('write-method found'); process.exit(1) }"
-      - run: npm run build
