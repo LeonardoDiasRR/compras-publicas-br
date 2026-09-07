@@ -9,17 +9,17 @@ OpenCode.
 No diretório do projeto, o escopo padrão é `project`:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent opencode
-uvx mcp-compras-publicas-br update --agent opencode
-uvx mcp-compras-publicas-br uninstall --agent opencode
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent opencode
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent opencode
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent opencode
 ```
 
 Para a configuração global do usuário, informe `--scope user`:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent opencode --scope user
-uvx mcp-compras-publicas-br update --agent opencode --scope user
-uvx mcp-compras-publicas-br uninstall --agent opencode --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent opencode --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent opencode --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent opencode --scope user
 ```
 
 `update` mantém a configuração não relacionada, atualiza a skill gerenciada e
@@ -57,10 +57,9 @@ segue o formato nativo documentado pelo OpenCode para um servidor local:
     "compras-publicas-br": {
       "type": "local",
       "command": [
-        "uvx",
-        "--from",
-        "mcp-compras-publicas-br==<versão>",
-        "mcp-compras-publicas-br"
+        "npx",
+        "-y",
+        "mcp-compras-publicas-br@<versão>"
       ]
     }
   }
@@ -72,22 +71,21 @@ O instalador faz merge somente da entrada `compras-publicas-br` dentro de
 
 A posse da entrada é reconhecida por forma exata: ela precisa ter somente as
 chaves `type` e `command`; `type` precisa ser `local`; e `command` precisa ser
-exatamente `['uvx', '--from', 'mcp-compras-publicas-br==<versão>',
-'mcp-compras-publicas-br']`. Campos nativos adicionais, como `enabled`, `cwd`,
-`environment` ou `timeout`, podem ser aceitos pelo OpenCode, mas fazem a
-entrada deixar de ser reconhecível pelo pacote. Nesse caso, `update` e
-`uninstall` não a alteram nem removem.
+exatamente `['npx', '-y', 'mcp-compras-publicas-br@<versão>']`. Campos
+nativos adicionais, como `enabled`, `cwd`, `environment` ou `timeout`, podem
+ser aceitos pelo OpenCode, mas fazem a entrada deixar de ser reconhecível pelo
+pacote. Nesse caso, `update` e `uninstall` não a alteram nem removem.
 
 A forma equivalente no shell é sempre:
 
 ```text
-uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<versão>
 ```
 
 `<versão>` é a versão exata registrada no momento da instalação ou atualização;
-não use `uvx mcp-compras-publicas-br` sem o pin no arquivo MCP. O adaptador
+não use `npx -y mcp-compras-publicas-br` sem o pin no arquivo MCP. O adaptador
 preserva as demais chaves do JSON e reconhece sua entrada pelo tipo local e pelo
-comando `uvx` com o pin do pacote durante `update` e `uninstall`.
+comando `npx` com o pin do pacote durante `update` e `uninstall`.
 
 ## Skills e regras
 
