@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 
 import { logger } from "../../shared/runtime.js";
-import type { ScopeName, ScopeTarget } from "../modelo.js";
+import type { ScopeName, ScopeTarget } from "./modelo.js";
 
 export function findProjectRoot(start: string): string | null {
   let candidate = resolve(start);
