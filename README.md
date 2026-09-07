@@ -16,16 +16,16 @@ As especificações OpenAPI oficiais são a fonte do catálogo e da verificaçã
 
 ## Instalação como plugin
 
-O pacote exige Python 3.12 ou superior e `uv`. Para registrar o plugin no projeto atual:
+O pacote exige Node.js 20 ou superior. Para registrar o plugin no projeto atual:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent <id>
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent <id>
 ```
 
 Para registrar o plugin no escopo do usuário:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent <id> --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent <id> --scope user
 ```
 
 O escopo padrão é `project`. O instalador procura a raiz Git subindo a partir do diretório atual; se não encontrar Git, usa o diretório atual e emite um aviso.
@@ -33,35 +33,27 @@ O escopo padrão é `project`. O instalador procura a raiz Git subindo a partir 
 Atualize ou remova uma instalação com:
 
 ```bash
-uvx mcp-compras-publicas-br update --agent <id>
-uvx mcp-compras-publicas-br uninstall --agent <id>
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent <id>
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent <id>
 ```
 
 Adicione `--scope user` aos comandos para operar na instalação global. Consulte [`docs/agents/`](docs/agents/) para os IDs e arquivos de cada agente.
 
-## Instalação local com uv
+## Instalação local com npm
 
-Requer Python 3.12 ou superior.
+Requer Node.js 20 ou superior.
 
-Instale o `uv` usando o instalador oficial:
-
-```powershell
-irm https://astral.sh/uv/install.ps1 | iex
-```
-
-Em macOS ou Linux:
+Na raiz do projeto, instale as dependências, incluindo as de desenvolvimento:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+npm install
 ```
 
-Na raiz do projeto, crie o ambiente e instale as dependências, incluindo as de desenvolvimento:
+O `package-lock.json` fixa a resolução das dependências. Gere os artefatos executáveis com:
 
 ```bash
-uv sync --all-groups
+npm run build
 ```
-
-O `uv.lock` fixa a resolução das dependências. Não é necessário ativar manualmente o `.venv`; os comandos `uv run` usam o ambiente do projeto.
 
 ## Execução
 
@@ -70,15 +62,15 @@ O `uv.lock` fixa a resolução das dependências. Não é necessário ativar man
 Use STDIO para clientes MCP locais:
 
 ```bash
-uv run python -m src.features.mcp.servidor --transport stdio
+npm start -- --transport stdio
 ```
 
 ### Streamable HTTP
 
-O CLI deste projeto expõe o transporte HTTP do FastMCP como `http`:
+O CLI deste projeto expõe o transporte Streamable HTTP como `http`:
 
 ```bash
-uv run python -m src.features.mcp.servidor --transport http --port 8000
+MCP_TRANSPORT=http npm start
 ```
 
 Por padrão, o servidor escuta na porta `8000`. Para execução remota, proteja o serviço com TLS, autenticação e limites de tráfego apropriados.
@@ -105,7 +97,7 @@ Somente as variáveis abaixo são suportadas atualmente e alteram o comportament
 
 `COMPRAS_BASE_URL` e `PNCP_BASE_URL` não são substituições suportadas: os adaptadores usam as origens fixas `https://dadosabertos.compras.gov.br` e `https://pncp.gov.br/api/pncp`, ambas dentro da lista de permissões HTTPS do cliente. Uma futura substituição de origem só deve ser documentada depois que o código implementar uma substituição segura, com validação explícita contra a lista de permissões.
 
-O argumento `--transport` do módulo é a forma explícita de escolher o transporte na inicialização e prevalece sobre `MCP_TRANSPORT`. Não coloque credenciais ou tokens no repositório.
+O argumento `--transport` do CLI é a forma explícita de escolher o transporte na inicialização e prevalece sobre `MCP_TRANSPORT`. Não coloque credenciais ou tokens no repositório.
 
 `MAX_DOCUMENT_BYTES` limita o corpo de toda resposta da origem antes que ele seja completamente lido, inclusive respostas JSON, texto, CSV e binárias. Para endpoints identificados como documentos, arquivos, imagens ou conteúdo limitado, exceder o limite retorna o marcador:
 
@@ -124,33 +116,32 @@ Para os demais endpoints, exceder o limite retorna o erro da origem `DOCUMENT_TO
 Execute os testes locais, excluindo as sondas de produção, que exigem ativação explícita:
 
 ```bash
-uv run pytest -m "not live" -q
+npm test
 ```
 
 Execute a verificação de cobertura do manifesto:
 
 ```bash
-uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
+npm run catalogo -- check coverage/endpoints.yaml
 ```
 
-Verifique a análise estática (lint) e os tipos:
+Verifique a análise estática de tipos:
 
 ```bash
-uv run ruff check .
-uv run pyright
+npm run typecheck
 ```
 
 As sondas contra as fontes oficiais exigem ativação explícita:
 
 ```bash
-RUN_LIVE_TESTS=1 uv run pytest -m live -q
+RUN_LIVE_TESTS=1 npm test
 ```
 
 No PowerShell:
 
 ```powershell
 $env:RUN_LIVE_TESTS = "1"
-uv run pytest -m live -q
+npm test
 ```
 
 ## Cobertura de endpoints
