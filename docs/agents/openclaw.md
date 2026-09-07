@@ -13,9 +13,9 @@ O servidor roda localmente via `stdio`; não requer nem usa Docker.
 Use o escopo explicitamente e execute o instalador no projeto desejado:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent openclaw --scope project
-uvx mcp-compras-publicas-br update --agent openclaw --scope project
-uvx mcp-compras-publicas-br uninstall --agent openclaw --scope project
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent openclaw --scope project
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent openclaw --scope project
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent openclaw --scope project
 ```
 
 Os exemplos que usam `$PWD` pressupõem que o shell está na raiz do projeto
@@ -46,7 +46,7 @@ O instalador preserva os demais servidores e adiciona somente a entrada
 gerenciada `compras-publicas-br`. O registro sempre usa uma versão exata:
 
 ```text
-uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@<versão>
 ```
 
 ## Ciclo de vida do usuário
@@ -55,9 +55,9 @@ O escopo de usuário é global para os projetos desse usuário. Use `--scope use
 em todas as operações do instalador:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent openclaw --scope user
-uvx mcp-compras-publicas-br update --agent openclaw --scope user
-uvx mcp-compras-publicas-br uninstall --agent openclaw --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin install --agent openclaw --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin update --agent openclaw --scope user
+npx -y mcp-compras-publicas-br@<versão> plugin uninstall --agent openclaw --scope user
 ```
 
 ## Escopos e arquivos
@@ -96,7 +96,7 @@ arquivo `<raiz-do-projeto>/.openclaw/openclaw.json` assim:
 
 ```bash
 export OPENCLAW_CONFIG_PATH="$PWD/.openclaw/openclaw.json"
-openclaw mcp add compras-publicas-br --command uvx --arg=--from --arg=mcp-compras-publicas-br==0.1.0 --arg=mcp-compras-publicas-br
+openclaw mcp add compras-publicas-br --command npx --arg=-y --arg=mcp-compras-publicas-br@0.1.0
 openclaw mcp doctor compras-publicas-br --probe
 ```
 
@@ -116,12 +116,8 @@ O equivalente direto em JSON5 é:
   mcp: {
     servers: {
       "compras-publicas-br": {
-        command: "uvx",
-        args: [
-          "--from",
-          "mcp-compras-publicas-br==<versão>",
-          "mcp-compras-publicas-br",
-        ],
+        command: "npx",
+        args: ["-y", "mcp-compras-publicas-br@<versão>"],
       },
     },
   },
@@ -131,7 +127,8 @@ O equivalente direto em JSON5 é:
 Em `stdio`, `command` é o executável, `args` são seus argumentos e a
 comunicação MCP usa stdin/stdout. Não redirecione logs para stdout do servidor.
 
-`update` fixa a versão estável mais recente publicada no PyPI. `uninstall`
+`update` fixa a versão estável mais recente publicada no npm
+(`dist-tags.latest` do registro). `uninstall`
 remove somente a entrada e a skill reconhecidas como gerenciadas pelo pacote.
 Para remover manualmente uma entrada criada pela CLI oficial, o comando atual é
 `unset`, não `remove`:
