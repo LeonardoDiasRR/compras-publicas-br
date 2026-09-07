@@ -185,16 +185,22 @@ export function renderPath(template: string, values: Record<string, unknown>): s
   let literalStart = 0;
   while (index < template.length) {
     const character = template[index]!;
-    if (character === "{" && template[index + 1] === "{") {
-      // Formatter().parse devolve "{{}"} verbatim e o código original não desescapa: manter igual
-      index += 2;
-      continue;
-    }
-    if (character !== "{") {
+    if (character === "{" || character === "}") {
+      if (template[index + 1] === character) {
+        // semântica str.format: "{{" e "}}" são chaves literais escapadas
+        rendered.push(template.slice(literalStart, index), character);
+        index += 2;
+        literalStart = index;
+        continue;
+      }
+      if (character === "}") {
+        throw new Error("Single '}' encountered in format string");
+      }
+      rendered.push(template.slice(literalStart, index));
+    } else {
       index += 1;
       continue;
     }
-    rendered.push(template.slice(literalStart, index));
     const end = template.indexOf("}", index + 1);
     if (end === -1) throw new Error("Single '{' encountered in format string");
     let field = template.slice(index + 1, end);
@@ -486,7 +492,7 @@ export class QueryService {
       const cached = this.cache.get(cacheKey);
       if (cached !== undefined && cached !== null) {
         const cachedCopy = structuredClone(cached);
-        const cachedResponse = McpResponseSchema.parse(cachedCopy) as McpResponse;
+        const cachedResponse = McpResponseSchema.parse(cachedCopy);
         if (QueryService._cacheableResponse(operation, cachedResponse)) {
           return cachedResponse;
         }
@@ -1094,8 +1100,14 @@ export class QueryService {
 
   private _cacheTtl(operation: Operation): number {
     const extra = operation as unknown as Record<string, unknown>;
+    // paridade com extra.get("cache_category", extra.get("category", "")):
+    // chave presente mesmo nula → str(None) = "None" → categoria desconhecida.
     const category = pyStr(
-      extra["cache_category"] ?? extra["category"] ?? "",
+      Object.hasOwn(extra, "cache_category")
+        ? extra["cache_category"]
+        : Object.hasOwn(extra, "category")
+          ? extra["category"]
+          : "",
     ).toLowerCase();
     const path = operation.path.toLowerCase();
     let resolved = category;
@@ -1186,7 +1198,11 @@ export class QueryService {
       endpoint: operation.path,
       query,
       data,
-      metadata: { retrieved_at: new Date().toISOString(), pagination },
+      // ponytail: ms precision padded to microsecond format
+      metadata: {
+        retrieved_at: `${new Date().toISOString().slice(0, 23)}000+00:00`,
+        pagination,
+      },
     };
   }
 }
