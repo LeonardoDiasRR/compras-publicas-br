@@ -12,7 +12,7 @@ explicitamente **No MCP**: não há formato oficial `mcpServers`, comando
 Para expor ferramentas ao Pi, a integração oficial é uma extensão TypeScript
 que registra ferramentas com `pi.registerTool()`. A extensão pode implementar
 o acesso necessário, mas a documentação do Pi não define uma ponte MCP para
-este servidor Python.
+este servidor.
 
 Neste pacote, o adaptador `pi` é uma limitação documentada e um fallback de
 arquivos para o ciclo de vida do instalador. Ele não garante registro MCP
@@ -132,12 +132,12 @@ Comandos do instalador deste projeto, quando usados para manter os arquivos
 gerenciados, são:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent pi
-uvx mcp-compras-publicas-br install --agent pi --scope user
-uvx mcp-compras-publicas-br update --agent pi
-uvx mcp-compras-publicas-br update --agent pi --scope user
-uvx mcp-compras-publicas-br uninstall --agent pi
-uvx mcp-compras-publicas-br uninstall --agent pi --scope user
+npx -y mcp-compras-publicas-br@V plugin install --agent pi
+npx -y mcp-compras-publicas-br@V plugin install --agent pi --scope user
+npx -y mcp-compras-publicas-br@V plugin update --agent pi
+npx -y mcp-compras-publicas-br@V plugin update --agent pi --scope user
+npx -y mcp-compras-publicas-br@V plugin uninstall --agent pi
+npx -y mcp-compras-publicas-br@V plugin uninstall --agent pi --scope user
 ```
 
 Esses comandos não transformam o servidor MCP em uma ferramenta Pi: o
@@ -146,13 +146,22 @@ dele. Não há garantia de registro MCP nativo ou de disponibilidade das
 ferramentas. Eles também não substituem `pi install` para instalar um pacote
 Pi.
 
-## Comando `uvx` fixado
+## Comando `npx` fixado
 
 Para clientes que suportam MCP, o servidor deve ser executado com a versão
 fixada:
 
 ```bash
-uvx --from mcp-compras-publicas-br==0.1.0 mcp-compras-publicas-br
+npx -y mcp-compras-publicas-br@V
+```
+
+Entrada de registro equivalente:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "mcp-compras-publicas-br@V"]
+}
 ```
 
 Esse comando não é uma configuração suportada pelo Pi e não deve ser usado
@@ -248,7 +257,7 @@ console.log({ active, all: all.map((tool) => tool.name) });
 mostra todas as ferramentas configuradas, incluindo `sourceInfo`. Não há um
 comando oficial `pi mcp list`; portanto, não reporte uma conexão MCP do Pi a
 partir apenas da presença de arquivos, do carregamento de uma skill ou da
-execução do `uvx`.
+execução do `npx`.
 
 Essas APIs verificam somente ferramentas registradas por Pi, SDK ou extensões
 na sessão atual. Elas não verificam o fallback do adaptador nem transformam a
@@ -257,7 +266,7 @@ entrada gerada em registro MCP nativo.
 ## Docker
 
 Esta integração não exige Docker. O Pi é executado diretamente no terminal;
-o comando `uvx` abaixo também é uma execução direta para clientes que possuem
+o comando `npx` abaixo também é uma execução direta para clientes que possuem
 suporte MCP, não uma configuração MCP do Pi.
 
 ## Documentação oficial
