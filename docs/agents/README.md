@@ -26,7 +26,7 @@ informe sempre o ID com `--agent`.
 Por padrão, a instalação usa o escopo `project`:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent <id>
+npx -y mcp-compras-publicas-br@X.Y.Z plugin install --agent <id>
 ```
 
 No escopo de projeto, o instalador procura a raiz Git subindo a partir do
@@ -38,7 +38,7 @@ emite um aviso.
 Para registrar o MCP na configuração global do usuário:
 
 ```bash
-uvx mcp-compras-publicas-br install --agent <id> --scope user
+npx -y mcp-compras-publicas-br@X.Y.Z plugin install --agent <id> --scope user
 ```
 
 O destino global segue o diretório padrão do agente e do sistema operacional.
@@ -46,19 +46,19 @@ O destino global segue o diretório padrão do agente e do sistema operacional.
 ### Atualizar
 
 ```bash
-uvx mcp-compras-publicas-br update --agent <id>
-uvx mcp-compras-publicas-br update --agent <id> --scope user
+npx -y mcp-compras-publicas-br@X.Y.Z plugin update --agent <id>
+npx -y mcp-compras-publicas-br@X.Y.Z plugin update --agent <id> --scope user
 ```
 
 `update` exige uma instalação reconhecível no escopo informado. Busca a versão
-estável mais recente no PyPI, atualiza o registro e a skill gerenciada e não
-modifica arquivos se o PyPI estiver indisponível.
+estável mais recente no npm, atualiza o registro e a skill gerenciada e não
+modifica arquivos se o npm estiver indisponível.
 
 ### Desinstalar
 
 ```bash
-uvx mcp-compras-publicas-br uninstall --agent <id>
-uvx mcp-compras-publicas-br uninstall --agent <id> --scope user
+npx -y mcp-compras-publicas-br@X.Y.Z plugin uninstall --agent <id>
+npx -y mcp-compras-publicas-br@X.Y.Z plugin uninstall --agent <id> --scope user
 ```
 
 `uninstall` remove somente a entrada `compras-publicas-br` e a skill que o
@@ -74,8 +74,8 @@ preservado e reportado.
 - A skill é criada ou atualizada como arquivo próprio em português do Brasil e
   contém um marcador de gerenciamento. Uma skill existente sem esse marcador
   não é sobrescrita.
-- O registro usa `uvx` com a versão exata do pacote em execução, no formato
-  `uvx --from mcp-compras-publicas-br==<versão> mcp-compras-publicas-br`.
+- O registro usa `npx` com a versão exata do pacote em execução, no formato
+  `npx -y mcp-compras-publicas-br@<versão>`.
 - A atualização fixa o registro na versão estável selecionada, preservando o
   merge e a skill gerenciada.
 - O adaptador usa a CLI oficial quando há uma interface estável; caso
