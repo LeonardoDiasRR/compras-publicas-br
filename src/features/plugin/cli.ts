@@ -15,7 +15,7 @@ type Operation = "install" | "update" | "uninstall";
 const OPERATIONS: Operation[] = ["install", "update", "uninstall"];
 const SCOPES: ScopeName[] = ["project", "user"];
 
-const USAGE = "usage: cli.py [-h] {install,update,uninstall} ...";
+const USAGE = "usage: mcp-compras-publicas-br [-h] {install,update,uninstall} ...";
 
 function printHelp(): void {
   process.stdout.write(
@@ -32,7 +32,7 @@ function printHelp(): void {
 
 function argparseError(message: string): void {
   process.stderr.write(`${USAGE}\n`);
-  process.stderr.write(`cli.py: error: ${message}\n`);
+  process.stderr.write(`mcp-compras-publicas-br: error: ${message}\n`);
 }
 
 interface Args {
