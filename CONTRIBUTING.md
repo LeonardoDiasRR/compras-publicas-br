@@ -31,24 +31,28 @@ adaptador também deve:
 
 ## Configuração Local e Verificações
 
-Instale as dependências com o lockfile travado a partir da raiz do repositório:
+Requisitos: Node.js `>= 20` e npm. Instale as dependências com o lockfile
+travado a partir da raiz do repositório:
 
 ```bash
-uv sync --locked --all-groups
+npm install
 ```
 
 Execute a suíte de testes offline e as verificações estáticas antes de enviar
 uma alteração:
 
 ```bash
-uv run pytest -m "not live" -q
-uv run ruff check .
-uv run pyright
-uv build
+npx vitest run
+npm run typecheck
+npm run build
 ```
 
 A suíte offline não deve contatar APIs de produção. As sondagens live continuam
-opt-in e não fazem parte do gate de contribuição.
+opt-in e não fazem parte do gate de contribuição:
+
+```bash
+RUN_LIVE_TESTS=1 npx vitest run
+```
 
 ## Adicionando um Novo Endpoint da API de Origem
 
@@ -97,26 +101,25 @@ blogs e servidores MCP existentes não são contratos.
    parâmetros, o contrato de resposta e a referência do snapshot em
    `coverage/endpoints.yaml`. Mantenha o manifest e a implementação em uma
    relação um-para-um.
-10. **Regenere a documentação.** Regenere os documentos de ferramentas e de
-    cobertura derivados do manifest:
-    ```bash
-    uv run python -m src.features.catalogo.catalogo render-tools coverage/endpoints.yaml --output TOOLS.md
-    uv run python -m src.features.catalogo.catalogo render-coverage coverage/endpoints.yaml --output ENDPOINT_COVERAGE.md
-    ```
+ 10. **Regenere a documentação.** Regenere os documentos de ferramentas e de
+     cobertura derivados do manifest:
+     ```bash
+     npm run catalogo -- render-tools coverage/endpoints.yaml --output TOOLS.md
+     npm run catalogo -- render-coverage coverage/endpoints.yaml --output ENDPOINT_COVERAGE.md
+     ```
      Verifique os dois documentos gerados:
-    ```bash
-    uv run python -m src.features.catalogo.catalogo --check-tools TOOLS.md coverage/endpoints.yaml
-    uv run python -m src.features.catalogo.catalogo --check-coverage-doc ENDPOINT_COVERAGE.md coverage/endpoints.yaml
-    ```
-11. **Restaure a cobertura para 100%.** Execute todas as verificações:
-    ```bash
-    uv run ruff check .
-    uv run pyright
-    uv run pytest -m 'not live' -q
-    uv run python -m src.features.catalogo.catalogo --check coverage/endpoints.yaml
-    rg -n '\.(post|put|patch|delete)\(' src/shared/http_readonly.py src/features/provedores
-    uv build
-    ```
+     ```bash
+     npm run catalogo -- --check-tools TOOLS.md coverage/endpoints.yaml
+     npm run catalogo -- --check-coverage-doc ENDPOINT_COVERAGE.md coverage/endpoints.yaml
+     ```
+ 11. **Restaure a cobertura para 100%.** Execute todas as verificações:
+     ```bash
+     npm run typecheck
+     npx vitest run
+     npm run catalogo -- check coverage/endpoints.yaml
+     rg -n '\.(post|put|patch|delete)\(' src/shared/http_readonly.ts src/features/provedores
+     npm run build
+     ```
      A varredura somente leitura não deve produzir correspondências. Um novo
      `GET` público e útil deve ser implementado ou classificado explicitamente
      com uma exclusão documentada. Não considere o endpoint concluído enquanto
