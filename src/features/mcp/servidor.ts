@@ -502,9 +502,19 @@ function buildServerFromManifest(
 
   // registro único estilo fastmcp: remove_tool/add_tool operam no map interno servido
   // pelos handlers abaixo (o registro nativo do McpServer fica bypassado)
+  const notifyToolsChanged = (): void => {
+    try {
+      void mcp.server
+        .notification({ method: "notifications/tools/list_changed" })
+        .catch(() => {});
+    } catch {
+      // nenhum cliente conectado ainda: ignora
+    }
+  };
   const servidor = mcp as ServidorMcp;
   servidor.removeTool = (name: string): void => {
     tools.delete(name);
+    notifyToolsChanged();
   };
   servidor.registerTool = ((
     name: string,
@@ -517,6 +527,7 @@ function buildServerFromManifest(
       inputSchema: isRecord(spec["inputSchema"]) ? spec["inputSchema"] : {},
       handler,
     });
+    notifyToolsChanged();
   }) as unknown as ServidorMcp["registerTool"];
 
   const atomicOperations = operations(endpoints);
@@ -883,6 +894,7 @@ function buildServerFromManifest(
   // registerTool do SDK só aceita Zod e reconverte para JSON Schema, o que não preserva
   // keys do manifesto (example/format/etc.). Os handlers abaixo substituem os do McpServer
   // (setRequestHandler substitui handler existente) e servem o JSON Schema byte a byte.
+  // ponytail: ceiling — relies on setRequestHandler replace-ordering vs McpServer internals; recheck on SDK major bump
   mcp.server.registerCapabilities({
     tools: { listChanged: true },
     resources: { listChanged: true },
@@ -969,8 +981,8 @@ function parseArgs(argv: string[]): ServerArgs | null {
   const unrecognized: string[] = [];
   const fail = (message: string): null => {
     process.stderr.write(
-      `usage: servidor.py [-h] [--manifest MANIFEST] [--transport {stdio,http}] [--port PORT]\n` +
-        `servidor.py: error: ${message}\n`,
+      `usage: mcp-compras-publicas-br [-h] [--manifest MANIFEST] [--transport {stdio,http}] [--port PORT]\n` +
+        `mcp-compras-publicas-br: error: ${message}\n`,
     );
     process.exitCode = 2;
     return null;
