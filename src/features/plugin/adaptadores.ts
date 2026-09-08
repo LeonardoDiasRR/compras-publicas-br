@@ -84,8 +84,9 @@ function isLocalNodeCommand(command: unknown, args: unknown[]): boolean {
     command === "node" &&
     args.length === 1 &&
     typeof args[0] === "string" &&
+    isAbsolute(args[0]) &&
     bin !== null &&
-    resolve(args[0]) === resolve(bin)
+    resolve(args[0]).toLowerCase() === resolve(bin).toLowerCase()
   );
 }
 
