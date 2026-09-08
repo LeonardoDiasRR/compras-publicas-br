@@ -73,9 +73,10 @@ entrada confirmam a propriedade.
 
 Configuração é tratada como dado. O instalador nunca executa comandos,
 argumentos, hooks ou outros valores lidos de uma configuração existente; ele
-emite apenas o comando `npx` fixo para este pacote. O comando emitido sempre
-fixa uma versão estável exata do pacote como
-`mcp-compras-publicas-br@<version>`.
+emite apenas dois comandos fixos para este pacote: o pin
+`npx -y mcp-compras-publicas-br@<version>` com versão estável exata, ou —
+quando a versão pinada é a instalação local em execução e o bin existe —
+`node <caminho absoluto do bin do pacote>`. Nenhum outro comando é emitido.
 
 A saída e os logs do instalador não devem conter conteúdo de configuração,
 credenciais, tokens ou outros segredos. Paths e avisos devem ser limitados às

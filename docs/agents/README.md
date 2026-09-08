@@ -74,8 +74,11 @@ preservado e reportado.
 - A skill é criada ou atualizada como arquivo próprio em português do Brasil e
   contém um marcador de gerenciamento. Uma skill existente sem esse marcador
   não é sobrescrita.
-- O registro usa `npx` com a versão exata do pacote em execução, no formato
-  `npx -y mcp-compras-publicas-br@<versão>`.
+- O registro usa a versão exata do pacote em execução: enquanto o pacote não
+  está publicado no npm e a versão pinada é a instalação local, a entrada é
+  `node <caminho absoluto do bin>`; caso contrário (ex.: após publicação, ou
+  via `update`), é `npx -y mcp-compras-publicas-br@<versão>`. O adaptador
+  reconhece as duas formas como suas.
 - A atualização fixa o registro na versão estável selecionada, preservando o
   merge e a skill gerenciada.
 - O adaptador usa a CLI oficial quando há uma interface estável; caso

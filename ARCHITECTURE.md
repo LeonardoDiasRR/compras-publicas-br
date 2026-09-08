@@ -34,8 +34,11 @@ A entrada de registro de cada agente inicia o servidor localmente por meio de
 npx -y mcp-compras-publicas-br@<versão-exata>
 ```
 
-A versão é a versão do pacote usada pelo instalador, nunca uma referência à
-versão mais recente sem fixação.
+Enquanto o pacote não está publicado no npm e a versão pinada corresponde à
+instalação local em execução, o bin é invocado diretamente
+(`node <caminho absoluto do bin>`), evitando o 404 do registry; o adaptador
+reconhece as duas formas. A versão é a versão do pacote usada pelo
+instalador, nunca uma referência à versão mais recente sem fixação.
 
 ## Componentes
 
