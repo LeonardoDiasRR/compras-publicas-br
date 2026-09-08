@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -20,7 +21,11 @@ import { QueryService } from "../consultas/servico.js";
 import { UpstreamError } from "../../shared/http_readonly.js";
 import { configureLogging, loadSettings, logger } from "../../shared/runtime.js";
 
-export const DEFAULT_MANIFEST = "coverage/endpoints.yaml";
+// raiz do pacote a partir do módulo (funciona em src/ e dist/, repo e npm).
+// --manifest continua sobrescrevendo.
+export const DEFAULT_MANIFEST = fileURLToPath(
+  new URL("../../../coverage/endpoints.yaml", import.meta.url),
+);
 
 type Rec = Record<string, unknown>;
 
