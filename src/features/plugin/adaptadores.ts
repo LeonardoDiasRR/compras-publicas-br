@@ -2,7 +2,7 @@ import { join, resolve, relative, isAbsolute } from "node:path";
 
 import type { AgentId, ScopeName, ScopeTarget } from "./modelo.js";
 import { PluginError } from "./modelo.js";
-import { PACKAGE_NAME, versionedCommand } from "./versoes.js";
+import { localBinPath, PACKAGE_NAME, versionedCommand } from "./versoes.js";
 
 export type ConfigFormat = "json" | "json5" | "toml";
 export type EntryStyle = "generic" | "opencode" | "cursor" | "command_args";
@@ -74,18 +74,33 @@ function isStablePin(value: unknown): boolean {
   return true;
 }
 
-// npx pin shape: ["npx", "-y", `${PACKAGE_NAME}@<stable>`]
-function ownsFullCommand(parts: unknown[]): boolean {
+// duas formas possuídas: ["npx","-y",`${PACKAGE_NAME}@<stable>`] e
+// ["node", <caminho do bin local>] escrita enquanto não publicado.
+// ponytail: localBinPath() é null em vitest(src); forma node só é testada
+// no e2e (roda do dist), onde ela é escrita de verdade.
+function isLocalNodeCommand(command: unknown, args: unknown[]): boolean {
+  const bin = localBinPath();
   return (
-    parts.length === 3 &&
-    parts[0] === "npx" &&
-    parts[1] === "-y" &&
-    isStablePin(parts[2])
+    command === "node" &&
+    args.length === 1 &&
+    typeof args[0] === "string" &&
+    bin !== null &&
+    resolve(args[0]) === resolve(bin)
   );
 }
 
-function ownsArgs(args: unknown[]): boolean {
-  return args.length === 2 && args[0] === "-y" && isStablePin(args[1]);
+function ownsFullCommand(parts: unknown[]): boolean {
+  if (parts.length === 3) {
+    return parts[0] === "npx" && parts[1] === "-y" && isStablePin(parts[2]);
+  }
+  return parts.length === 2 && isLocalNodeCommand(parts[0], parts.slice(1));
+}
+
+function ownsArgs(args: unknown[], command: unknown): boolean {
+  if (command === "npx") {
+    return args.length === 2 && args[0] === "-y" && isStablePin(args[1]);
+  }
+  return isLocalNodeCommand(command, args);
 }
 
 function validParts(value: unknown, allowNone = false): boolean {
@@ -195,22 +210,22 @@ class Adapter implements AgentAdapter {
 
     if (this.entryStyle === "cursor") {
       if (!hasExactKeys(entry, "type", "command", "args")) return false;
-      if (entry["type"] !== "stdio" || entry["command"] !== "npx") return false;
+      if (entry["type"] !== "stdio") return false;
       const rawArgs = entry["args"];
       if (!isSequence(rawArgs)) return false;
-      return ownsArgs(rawArgs);
+      return ownsArgs(rawArgs, entry["command"]);
     }
 
     const expectedKeys =
       this.entryStyle === "generic"
         ? (["command", "args", "managedBy"] as const)
         : (["command", "args"] as const);
-    if (!hasExactKeys(entry, ...expectedKeys) || entry["command"] !== "npx") {
+    if (!hasExactKeys(entry, ...expectedKeys)) {
       return false;
     }
     const rawArgs = entry["args"];
     if (!isSequence(rawArgs)) return false;
-    if (!ownsArgs(rawArgs)) return false;
+    if (!ownsArgs(rawArgs, entry["command"])) return false;
     if (this.entryStyle !== "generic") return true;
     const managedBy = entry["managedBy"];
     if (!isMapping(managedBy)) return false;
