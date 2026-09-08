@@ -6,7 +6,7 @@
   "license": "MIT",
   "engines": { "node": ">=20" },
   "bin": { "mcp-compras-publicas-br": "dist/index.js" },
-  "files": ["dist"],
+  "files": ["dist", "coverage/endpoints.yaml"],
   "scripts": {
     "build": "tsc && node scripts/postbuild.mjs",
     "typecheck": "tsc --noEmit",
