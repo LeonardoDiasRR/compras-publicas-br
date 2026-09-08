@@ -6,7 +6,6 @@ import { join, resolve } from "node:path";
 
 const BIN = resolve("dist/index.js");
 const distReady = existsSync(BIN);
-const version: string = JSON.parse(readFileSync("package.json", "utf8")).version;
 
 const tempDirs: string[] = [];
 function makeTempProject(): string {
@@ -59,8 +58,9 @@ describe.skipIf(!distReady)("e2e: plugin install/uninstall via bin real", () => 
 
     const config = JSON.parse(readFileSync(configPath, "utf8"));
     const entry = config.mcpServers["compras-publicas-br"];
-    expect(entry.command).toBe("npx");
-    expect(entry.args).toContain(`mcp-compras-publicas-br@${version}`);
+    expect(entry.command).toBe("node");
+    expect(entry.args).toHaveLength(1);
+    expect(String(entry.args[0]).replace(/\\/g, "/")).toMatch(/dist\/index\.js$/);
     expect(readFileSync(skillPath, "utf8")).toContain("managed-by: mcp-compras-publicas-br; format: 1");
 
     const reinstall = runBin(["plugin", "install", "--agent", "generic", "--scope", "project"], project);
