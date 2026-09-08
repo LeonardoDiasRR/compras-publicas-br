@@ -6,5 +6,6 @@ __pycache__/
 *.py[cod]
 .env
 coverage-report.md
+prd.md
 node_modules/
 dist/
