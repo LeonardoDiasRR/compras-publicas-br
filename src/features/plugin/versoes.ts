@@ -37,7 +37,26 @@ export function installedVersion(): string {
   throw new PluginError(`Installed package "${PACKAGE_NAME}" was not found`);
 }
 
+// bin do pacote relativo ao módulo: dist/index.js. Em src/ (vitest) não existe
+// → null → forma npx, preservando os testes unitários atuais.
+export function localBinPath(): string | null {
+  const bin = fileURLToPath(new URL("../../index.js", import.meta.url));
+  return existsSync(bin) ? bin : null;
+}
+
+// ponytail: local bin vence enquanto o pacote não está publicado; quando
+// publicado, update (latest != installed) cai naturalmente no npx.
 export function versionedCommand(version: string): string[] {
+  const bin = localBinPath();
+  if (bin !== null) {
+    let installed: string | null = null;
+    try {
+      installed = installedVersion();
+    } catch {
+      installed = null;
+    }
+    if (installed === version) return ["node", bin];
+  }
   return ["npx", "-y", `${PACKAGE_NAME}@${version}`];
 }
 
