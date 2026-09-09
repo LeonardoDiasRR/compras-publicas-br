@@ -465,6 +465,358 @@ function withOverlapMarker(results: Rec): Rec {
   return results;
 }
 
+function normalizeNumero(value: unknown): string {
+  return pyStr(value).replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+}
+
+function contratacaoResumoPncp(record: Rec): Rec {
+  return {
+    numero_controle_pncp: record["numeroControlePNCP"] ?? null,
+    cnpj: record["orgaoEntidadeCnpj"] ?? null,
+    ano: record["anoCompraPncp"] ?? null,
+    sequencial_contratacao: record["sequencialCompraPncp"] ?? null,
+    numero_compra: record["numeroCompra"] ?? null,
+    uasg: record["unidadeOrgaoCodigoUnidade"] ?? null,
+    orgao: record["orgaoEntidadeRazaoSocial"] ?? null,
+    objeto: record["objetoCompra"] ?? null,
+    modalidade: record["modalidadeNome"] ?? null,
+    situacao: record["situacaoCompraNomePncp"] ?? null,
+    data_publicacao_pncp: record["dataPublicacaoPncp"] ?? null,
+  };
+}
+
+function contratacaoProximoPasso(matches: Rec[]): Rec | null {
+  const first = matches.find(
+    (match) => match["cnpj"] && match["ano"] && match["sequencial_contratacao"],
+  );
+  if (!first) return null;
+  return {
+    ferramenta: "pncp_obter_contratacao_completa",
+    argumentos: {
+      cnpj: first["cnpj"],
+      ano: first["ano"],
+      sequencial_contratacao: first["sequencial_contratacao"],
+    },
+  };
+}
+
+interface ResolucaoContratacao {
+  found: boolean;
+  lookup: string;
+  codigo_consultado: string;
+  contratacoes: Rec[];
+  mensagem?: string;
+  error?: Rec;
+}
+
+async function resolverContratacao(
+  service: QueryService,
+  lookupOperation: Operation,
+  scanOperation: Operation,
+  args: Rec,
+): Promise<ResolucaoContratacao> {
+  const parsed = /^(\d{1,10})(?:\/(\d{4}))?$/.exec(pyStr(args["numero"] ?? "").trim());
+  if (!parsed) {
+    throw new Error('numero must be digits or "numero/ano", e.g. "90010" or "90010/2025"');
+  }
+  const ano = Number(args["ano"]);
+  if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) {
+    throw new Error("ano must be a four-digit year between 2000 and 2100");
+  }
+  const uasg = pyStr(args["uasg"] ?? "").trim();
+  if (!/^\d{6}$/.test(uasg)) throw new Error("uasg must be a 6-digit code");
+  if (parsed[2] !== undefined && Number(parsed[2]) !== ano) {
+    throw new Error(`numero year ${parsed[2]} conflicts with ano ${ano}`);
+  }
+  const numero = parsed[1]!.replace(/^0+(?=\d)/, "");
+  const codigo = `${uasg}_${numero}_${ano}`;
+  try {
+    const quick = records(
+      await service.execute(lookupOperation, {
+        tipo: "numeroControlePNCPCompra",
+        codigo,
+      }),
+    ).filter((record) => pyStr(record["numeroControlePNCP"] ?? "").trim());
+    if (quick.length > 0) {
+      return {
+        found: true,
+        lookup: "numeroControlePNCPCompra",
+        codigo_consultado: codigo,
+        contratacoes: quick.map(contratacaoResumoPncp),
+      };
+    }
+  } catch (error) {
+    if (error instanceof UpstreamError) {
+      return {
+        found: false,
+        lookup: "numeroControlePNCPCompra",
+        codigo_consultado: codigo,
+        contratacoes: [],
+        error: upstreamErrorEnvelope(error),
+      };
+    }
+    throw error;
+  }
+  const modalidade = args["modalidade"];
+  if (modalidade === null || modalidade === undefined) {
+    return {
+      found: false,
+      lookup: "numeroControlePNCPCompra",
+      codigo_consultado: codigo,
+      contratacoes: [],
+      mensagem:
+        "Nenhuma contratação localizada pelo numeroControlePNCP; unidades fora do Siafi podem " +
+        "usar outro código de unidade. Informe modalidade para varrer as contratações da UASG.",
+    };
+  }
+  const scanArgs: Rec = {
+    unidadeOrgaoCodigoUnidade: uasg,
+    codigoModalidade: modalidade,
+    dataPublicacaoPncpInicial: args["data_inicio"] ?? `${ano}-01-01`,
+    dataPublicacaoPncpFinal: args["data_fim"] ?? `${ano}-12-31`,
+    auto_paginar: true,
+    tamanhoPagina: 50,
+  };
+  if (args["limite_resultados"] !== null && args["limite_resultados"] !== undefined) {
+    scanArgs["limite_resultados"] = args["limite_resultados"];
+  }
+  let scan: unknown;
+  try {
+    scan = await service.execute(scanOperation, scanArgs);
+  } catch (error) {
+    if (error instanceof UpstreamError) {
+      return {
+        found: false,
+        lookup: "varredura_uasg",
+        codigo_consultado: codigo,
+        contratacoes: [],
+        error: upstreamErrorEnvelope(error),
+      };
+    }
+    throw error;
+  }
+  const contratacoes = records(scan)
+    .filter(
+      (record) =>
+        normalizeNumero(record["numeroCompra"] ?? "") === numero &&
+        Number(record["anoCompraPncp"]) === ano,
+    )
+    .map(contratacaoResumoPncp);
+  return {
+    found: contratacoes.length > 0,
+    lookup: "varredura_uasg",
+    codigo_consultado: codigo,
+    contratacoes,
+  };
+}
+
+async function buscarContratacaoPorNumeroAnoUasg(
+  service: QueryService,
+  lookupOperation: Operation,
+  scanOperation: Operation,
+  args: Rec,
+): Promise<Rec> {
+  const resolucao = await resolverContratacao(service, lookupOperation, scanOperation, args);
+  if (resolucao.error) return resolucao.error;
+  const resposta: Rec = {
+    found: resolucao.found,
+    source: "compras",
+    lookup: resolucao.lookup,
+    codigo_consultado: resolucao.codigo_consultado,
+    ...(resolucao.mensagem ? { mensagem: resolucao.mensagem } : {}),
+    contratacoes: resolucao.contratacoes,
+  };
+  if (resolucao.found) resposta["proximo_passo"] = contratacaoProximoPasso(resolucao.contratacoes);
+  return resposta;
+}
+
+function normalizarTexto(value: unknown): string {
+  return pyStr(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function documentoResumo(record: Rec): Rec {
+  return {
+    sequencial_documento: record["sequencialDocumento"] ?? null,
+    tipo_documento_id: record["tipoDocumentoId"] ?? null,
+    tipo_documento: record["tipoDocumentoNome"] ?? null,
+    titulo: record["titulo"] ?? null,
+    url: record["url"] ?? null,
+    uri: record["uri"] ?? null,
+    status_ativo: record["statusAtivo"] ?? null,
+    data_publicacao_pncp: record["dataPublicacaoPncp"] ?? null,
+  };
+}
+
+function filtrarDocumentosPorTipo(documentos: Rec[], tipoDocumento: string): {
+  documentos: Rec[];
+  tipos_disponiveis: string[];
+} {
+  const alvo = normalizarTexto(tipoDocumento);
+  const tipos = [...new Set(documentos.map((d) => pyStr(d["tipo_documento"] ?? "")).filter(Boolean))];
+  const exatos = documentos.filter((d) => normalizarTexto(d["tipo_documento"]) === alvo);
+  if (exatos.length > 0) return { documentos: exatos, tipos_disponiveis: tipos };
+  const contidos = documentos.filter((d) => normalizarTexto(d["tipo_documento"]).includes(alvo));
+  return { documentos: contidos.length === 1 ? contidos : [], tipos_disponiveis: tipos };
+}
+
+function ataResumo(record: Rec): Rec {
+  return {
+    numero_ata: record["numeroAtaRegistroPreco"] ?? null,
+    ano_ata: record["anoAta"] ?? null,
+    sequencial_ata: record["sequencialAta"] ?? null,
+    numero_controle_pncp: record["numeroControlePNCP"] ?? null,
+    data_assinatura: record["dataAssinatura"] ?? null,
+    data_vigencia_inicio: record["dataVigenciaInicio"] ?? null,
+    data_vigencia_fim: record["dataVigenciaFim"] ?? null,
+    cancelado: record["cancelado"] ?? null,
+    objeto: record["objetoCompra"] ?? null,
+    possibilidade_adesao: record["possibilidadeAdesao"] ?? null,
+  };
+}
+
+function resolucaoNaoEncontrada(resolucao: ResolucaoContratacao): Rec {
+  return {
+    found: false,
+    source: "pncp",
+    lookup: resolucao.lookup,
+    codigo_consultado: resolucao.codigo_consultado,
+    ...(resolucao.mensagem ? { mensagem: resolucao.mensagem } : {}),
+  };
+}
+
+function resumoIncompleto(match: Rec): Rec {
+  return {
+    ...match,
+    mensagem: "identificadores incompletos para consultar o PNCP",
+  };
+}
+
+async function listarDocumentosContratacao(
+  service: QueryService,
+  lookupOperation: Operation,
+  scanOperation: Operation,
+  arquivosOperation: Operation,
+  args: Rec,
+): Promise<Rec> {
+  const resolucao = await resolverContratacao(service, lookupOperation, scanOperation, args);
+  if (resolucao.error) return resolucao.error;
+  if (!resolucao.found) return resolucaoNaoEncontrada(resolucao);
+  const contratacoes: Rec[] = [];
+  for (const match of resolucao.contratacoes) {
+    if (!match["cnpj"] || !match["ano"] || !match["sequencial_contratacao"]) {
+      contratacoes.push({ ...resumoIncompleto(match), documentos: [] });
+      continue;
+    }
+    let envelope: unknown;
+    try {
+      envelope = await service.execute(arquivosOperation, {
+        cnpj: match["cnpj"],
+        ano: match["ano"],
+        sequencial: match["sequencial_contratacao"],
+        auto_paginar: true,
+        tamanhoPagina: 50,
+      });
+    } catch (error) {
+      if (error instanceof UpstreamError) return upstreamErrorEnvelope(error);
+      throw error;
+    }
+    let documentos = records(envelope).map(documentoResumo);
+    const entrada: Rec = { ...match };
+    const filtro = args["tipo_documento"];
+    if (typeof filtro === "string" && filtro.trim()) {
+      const filtrado = filtrarDocumentosPorTipo(documentos, filtro);
+      documentos = filtrado.documentos;
+      entrada["tipos_disponiveis"] = filtrado.tipos_disponiveis;
+    }
+    entrada["documentos"] = documentos;
+    const primeiro = documentos[0];
+    if (primeiro) {
+      entrada["proximo_passo"] = {
+        ferramenta:
+          "pncp_obter_orgaos_compras_arquivos_por_cnpj_ano_sequencial_sequencialdocumento",
+        argumentos: {
+          cnpj: match["cnpj"],
+          ano: match["ano"],
+          sequencial: match["sequencial_contratacao"],
+          sequencial_documento: primeiro["sequencial_documento"],
+        },
+      };
+    }
+    contratacoes.push(entrada);
+  }
+  return {
+    found: true,
+    source: "pncp",
+    codigo_consultado: resolucao.codigo_consultado,
+    contratacoes,
+  };
+}
+
+async function listarArpsContratacao(
+  service: QueryService,
+  lookupOperation: Operation,
+  scanOperation: Operation,
+  atasOperation: Operation,
+  args: Rec,
+): Promise<Rec> {
+  const resolucao = await resolverContratacao(service, lookupOperation, scanOperation, args);
+  if (resolucao.error) return resolucao.error;
+  if (!resolucao.found) return resolucaoNaoEncontrada(resolucao);
+  const contratacoes: Rec[] = [];
+  for (const match of resolucao.contratacoes) {
+    if (!match["cnpj"] || !match["ano"] || !match["sequencial_contratacao"]) {
+      contratacoes.push({ ...resumoIncompleto(match), arps: [] });
+      continue;
+    }
+    let envelope: unknown;
+    try {
+      envelope = await service.execute(atasOperation, {
+        cnpj: match["cnpj"],
+        anoCompra: match["ano"],
+        sequencialCompra: match["sequencial_contratacao"],
+        auto_paginar: true,
+        tamanhoPagina: 50,
+      });
+    } catch (error) {
+      if (error instanceof UpstreamError) return upstreamErrorEnvelope(error);
+      throw error;
+    }
+    const arps = records(envelope).map(ataResumo);
+    const entrada: Rec = { ...match, arps };
+    const primeira = arps[0];
+    if (primeira && primeira["sequencial_ata"]) {
+      entrada["proximo_passo"] = {
+        ferramenta: "pncp_obter_ata_completa",
+        argumentos: {
+          cnpj: match["cnpj"],
+          ano: match["ano"],
+          sequencial_contratacao: match["sequencial_contratacao"],
+          sequencial_ata: primeira["sequencial_ata"],
+        },
+      };
+    }
+    contratacoes.push(entrada);
+  }
+  const temArps = contratacoes.some(
+    (contratacao) => Array.isArray(contratacao["arps"]) && (contratacao["arps"] as unknown[]).length > 0,
+  );
+  return {
+    found: temArps,
+    source: "pncp",
+    codigo_consultado: resolucao.codigo_consultado,
+    ...(temArps
+      ? {}
+      : { mensagem: "Contratação localizada mas sem atas de registro de preços publicadas." }),
+    contratacoes,
+  };
+}
+
 interface ToolSpec {
   name: string;
   description: string;
@@ -810,6 +1162,119 @@ function buildServerFromManifest(
           sequencialContrato: args["sequencial_contrato"],
         }),
     });
+  }
+
+  const lookupContratacaoPncpOperation = operations(
+    endpoints,
+    (endpoint) =>
+      endpoint["id"] ===
+      "compras.GET./modulo-contratacoes/1.1_consultarContratacoes_PNCP_14133_Id",
+  )[0];
+  const scanContratacoesPncpOperation = operations(
+    endpoints,
+    (endpoint) =>
+      endpoint["id"] === "compras.GET./modulo-contratacoes/1_consultarContratacoes_PNCP_14133",
+  )[0];
+  if (lookupContratacaoPncpOperation && scanContratacoesPncpOperation) {
+    const buscaSchema = (properties: Rec): Rec => ({
+      type: "object",
+      properties: {
+        numero: {
+          type: "string",
+          description: 'Número da contratação, aceitando "90010" ou "90010/2025".',
+        },
+        ano: { type: "integer", description: "Ano da contratação, por exemplo 2025." },
+        uasg: { type: "string", description: "Código UASG da unidade compradora, 6 dígitos." },
+        modalidade: {
+          anyOf: [{ type: "integer" }, { type: "null" }],
+          default: null,
+          description:
+            "Código da modalidade (ex.: Pregão Eletrônico) usado apenas na varredura por UASG " +
+            "quando o numeroControlePNCP não existe.",
+        },
+        data_inicio: optionalSchema("string"),
+        data_fim: optionalSchema("string"),
+        limite_resultados: optionalSchema("integer"),
+        ...properties,
+      },
+      required: ["numero", "ano", "uasg"],
+      additionalProperties: false,
+    });
+
+    addComposite({
+      name: "pncp_buscar_contratacao_por_numero_ano_uasg",
+      description:
+        "Localiza os identificadores PNCP de uma contratação (CNPJ do órgão, ano e sequencial) a " +
+        "partir do número da contratação, ano e UASG — por exemplo Pregão Eletrônico 90010/2025 na " +
+        "UASG 200350. Use antes de pncp_obter_contratacao_completa quando o numeroControlePNCP não " +
+        "for conhecido.",
+      inputSchema: buscaSchema({}),
+      handler: (args) =>
+        buscarContratacaoPorNumeroAnoUasg(
+          service,
+          lookupContratacaoPncpOperation,
+          scanContratacoesPncpOperation,
+          args,
+        ),
+    });
+
+    const arquivosContratacaoOperation = operations(
+      endpoints,
+      (endpoint) =>
+        endpoint["id"] === "pncp.GET./v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/arquivos",
+    )[0];
+    if (arquivosContratacaoOperation) {
+      addComposite({
+        name: "pncp_listar_documentos_contratacao_por_numero_ano_uasg",
+        description:
+          "Lista os documentos públicos de uma contratação do PNCP — ETP, Termo de Referência, " +
+          "Edital e anexos — a partir do número da contratação, ano e UASG, com tipo, título, url e " +
+          "sequencial_documento para download. Use quando os identificadores PNCP não forem " +
+          "conhecidos.",
+        inputSchema: buscaSchema({
+          tipo_documento: {
+            anyOf: [{ type: "string" }, { type: "null" }],
+            default: null,
+            description:
+              'Filtro pelo nome do tipo de documento, por exemplo "Edital", "ETP" ou ' +
+              '"Termo de Referência".',
+          },
+        }),
+        handler: (args) =>
+          listarDocumentosContratacao(
+            service,
+            lookupContratacaoPncpOperation,
+            scanContratacoesPncpOperation,
+            arquivosContratacaoOperation,
+            args,
+          ),
+      });
+    }
+
+    const atasContratacaoOperation = operations(
+      endpoints,
+      (endpoint) =>
+        endpoint["id"] ===
+        "pncp.GET./v1/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/atas",
+    )[0];
+    if (atasContratacaoOperation) {
+      addComposite({
+        name: "pncp_listar_arps_contratacao_por_numero_ano_uasg",
+        description:
+          "Lista as Atas de Registro de Preços (ARPs) vinculadas a uma contratação do PNCP a partir " +
+          "do número da contratação, ano e UASG, distinguindo contratação sem atas de contratação " +
+          "não localizada. Use quando os identificadores PNCP não forem conhecidos.",
+        inputSchema: buscaSchema({}),
+        handler: (args) =>
+          listarArpsContratacao(
+            service,
+            lookupContratacaoPncpOperation,
+            scanContratacoesPncpOperation,
+            atasContratacaoOperation,
+            args,
+          ),
+      });
+    }
   }
 
   const searchOperations = operations(

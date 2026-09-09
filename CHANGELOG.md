@@ -18,6 +18,9 @@
 - Manifesto do projeto.
 - gate obrigatório de cobertura.
 - Detecção de divergências.
+- Ferramenta composta `pncp_buscar_contratacao_por_numero_ano_uasg`: localiza CNPJ, ano e sequencial PNCP a partir do número da contratação, ano e UASG.
+- Ferramenta composta `pncp_listar_documentos_contratacao_por_numero_ano_uasg`: lista ETP, TR, Edital e anexos de uma contratação por número, ano e UASG, com filtro opcional por tipo de documento.
+- Ferramenta composta `pncp_listar_arps_contratacao_por_numero_ano_uasg`: lista as Atas de Registro de Preços de uma contratação por número, ano e UASG.
 
 ### Removido
 

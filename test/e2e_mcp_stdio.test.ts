@@ -38,10 +38,11 @@ describe.skipIf(!active)("e2e: servidor MCP por stdio contra APIs oficiais", () 
     await transport?.close().catch(() => undefined);
   });
 
-  it("inicializa e registra as 175 ferramentas do manifesto", async () => {
+  it("inicializa e registra as 178 ferramentas do manifesto", async () => {
     const tools = await client.listTools();
-    expect(tools.tools).toHaveLength(175);
+    expect(tools.tools).toHaveLength(178);
     expect(tools.tools.map((t) => t.name)).toContain("buscar_compras_publicas");
+    expect(tools.tools.map((t) => t.name)).toContain("pncp_buscar_contratacao_por_numero_ano_uasg");
   }, 90_000);
 
   it("recurso mcp://coverage reporta cobertura total", async () => {

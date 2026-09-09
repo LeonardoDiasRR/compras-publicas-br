@@ -2167,3 +2167,21 @@ Ferramentas compostas e de diagnóstico que realizam somente consultas de leitur
 - Descrição: Pesquisa compras públicas nas fontes catalogadas, no Compras.gov.br, no PNCP ou em ambas.
 - Argumentos principais: `texto` (string), `orgao`, `uasg`, `cnpj`, `modalidade`, `data_inicio`, `data_fim`, `codigo_material`, `codigo_servico` e `fonte` (`compras`, `pncp` ou `todas`).
 - Comportamento somente leitura: executa apenas consultas GET catalogadas, sem deduplicar ou modificar resultados, registros ou fontes.
+
+### `pncp_buscar_contratacao_por_numero_ano_uasg`
+
+- Descrição: Localiza os identificadores PNCP de uma contratação (CNPJ do órgão, ano e sequencial) a partir do número da contratação, ano e UASG, por exemplo Pregão Eletrônico 90010/2025 na UASG 200350.
+- Argumentos principais: `numero` (string, aceita `90010` ou `90010/2025`), `ano` (inteiro), `uasg` (string de 6 dígitos), `modalidade`, `data_inicio`, `data_fim` e `limite_resultados` (opcionais).
+- Comportamento somente leitura: consulta apenas os endpoints GET catalogados do Compras.gov.br e não cria, altera ou exclui dados.
+
+### `pncp_listar_documentos_contratacao_por_numero_ano_uasg`
+
+- Descrição: Lista os documentos públicos de uma contratação do PNCP — ETP, Termo de Referência, Edital e anexos — a partir do número da contratação, ano e UASG, com tipo, título, url e sequencial_documento para download.
+- Argumentos principais: `numero` (string, aceita `90010` ou `90010/2025`), `ano` (inteiro), `uasg` (string de 6 dígitos), `tipo_documento` (nome do tipo, por exemplo `Edital`), `modalidade`, `data_inicio`, `data_fim` e `limite_resultados` (opcionais).
+- Comportamento somente leitura: resolve os identificadores PNCP via Compras.gov.br e lista documentos apenas pelo endpoint GET catalogado de arquivos da contratação, sem baixar conteúdo nem alterar dados.
+
+### `pncp_listar_arps_contratacao_por_numero_ano_uasg`
+
+- Descrição: Lista as Atas de Registro de Preços (ARPs) vinculadas a uma contratação do PNCP a partir do número da contratação, ano e UASG, distinguindo contratação sem atas de contratação não localizada.
+- Argumentos principais: `numero` (string, aceita `90010` ou `90010/2025`), `ano` (inteiro), `uasg` (string de 6 dígitos), `modalidade`, `data_inicio`, `data_fim` e `limite_resultados` (opcionais).
+- Comportamento somente leitura: resolve os identificadores PNCP via Compras.gov.br e lista atas apenas pelo endpoint GET catalogado de atas da contratação, sem criar, alterar ou excluir dados.
